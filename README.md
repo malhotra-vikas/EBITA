@@ -47,3 +47,16 @@ After running the command, follow these steps:
 1. Additionally, check the output files in the designated S3 output bucket named "output-scraper-bucket".
 
 3. If data is successfully scraped, your application is functioning correctly.
+
+
+## Setup for the .env file inside the project directory
+1. Go the project folder that is EBITA
+2. Create the .env file here with this command:
+    ```
+    touch .env
+    ```
+3. Now after create the env file store all the variables inside it, with this command or store mannually:
+    ```
+    nano .env
+    ```
+4. After the stored all the variables it will pick all the variables automatically from the env file.
