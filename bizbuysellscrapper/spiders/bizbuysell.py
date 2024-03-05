@@ -95,7 +95,7 @@ class BizbuysellSpider(scrapy.Spider):
         asking_price = response.css(
             'p.price.asking b:not(:has(*))::text, span.auction-details-label.font-regular.lime.tablet-block::text, div.initial-info-table-col:contains("Cash Required") p.franchise-details-label::text').get().strip()
         cash_flow = response.css(
-            'span.title:contains("Cash Flow:")::text').get()
+            'span.title:contains("Cash Flow:") + b::text').get()
         rent = response.css(
             'span.title:contains("Rent:") + b::text, div.initial-info-table-col:contains("Min. Franchise Fee") p.franchise-details-label::text').get()
         established = response.css(
