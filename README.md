@@ -21,9 +21,16 @@ cd project/buz_scrapper/bizbuysellscrapper/
 ## Step 3: Running the Application mannually
 1. To start the application mannually, run the following command:
 
-```
-scrapy crawl bizbuysell
-```
+For BizBuySell:
+    ```
+    scrapy crawl bizbuysell
+    ```
+
+For Business for sale:
+    ```
+    scrapy crawl bussinessforsale
+    ```
+
 ## Step 4: Crontab setup configuration for running application automatically
 
 1. I've set up a cronjob to execute the script. Currently, it's scheduled to run once a day.
