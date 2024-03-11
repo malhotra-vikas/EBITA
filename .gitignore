@@ -1,6 +1,7 @@
 # Python cache files
 *.pyc
 __pycache__/
+EBITAVenv/
 
 # Other generated files
 *.log
