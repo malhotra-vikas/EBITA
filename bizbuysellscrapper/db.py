@@ -30,7 +30,7 @@ class DynamoDBManager:
     def get_table(self, schema):
         existing_tables = [table.name for table in self.dynamodb.tables.all()]
         if self.table_name not in existing_tables:
-            custom_logger.info("creating table ", self.table_name)
+            custom_logger.info("creating table %s", self.table_name)
             self.create_table(**schema)
         self.table = self.dynamodb.Table(self.table_name)
     
