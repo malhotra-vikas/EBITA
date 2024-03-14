@@ -1,5 +1,6 @@
 import scrapy
 import re
+import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
@@ -152,11 +153,12 @@ class BizbuysellSpider(scrapy.Spider):
         yield  {
             "businessOpportunity": {
                 "ad_id":str(article_id),
+                "source": "BizBuySell",
                 "article_url":article_url if article_url else None,
                 "category":businesses_title.strip() if businesses_title else None,
                 "title": title,
                 "location": location,
-                "listing-photos": dynamic_dict,
+                "listing-photos": json.dumps(dynamic_dict),
                 "businessListedBy": business_listed_by.strip() if business_listed_by is not None else None,
                 "asking_price": asking_price,
                 "cash_flow": cash_flow.strip() if cash_flow is not None else None,
@@ -164,7 +166,7 @@ class BizbuysellSpider(scrapy.Spider):
                 "established": established.strip() if established is not None else None,
                 "gross_revenue": gross_revenue.strip() if gross_revenue is not None else None,
                 "business_description": remove_special_characters(business_description_text.strip()) if business_description_text is not None else None,
-                "detailedInformation": {
+                "detailedInformation": json.dumps({
                     "building_sf": building_sf.strip() if building_sf is not None else None,
                     "competition": competition.strip() if competition is not None else None,
                     "employees": employees.strip() if employees is not None else None,
@@ -174,8 +176,6 @@ class BizbuysellSpider(scrapy.Spider):
                     "real_estate": real_estate.strip() if real_estate is not None else None,
                     "reason_for_selling": reason_for_selling.strip() if reason_for_selling is not None else None,
                     "support_training": support_training.strip() if support_training is not None else None,
-                }
+                })
             }}
-      
-        
 

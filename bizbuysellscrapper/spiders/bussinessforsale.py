@@ -1,5 +1,6 @@
 import scrapy
 import re
+import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
@@ -95,23 +96,33 @@ class BussinessforsaleSpider(scrapy.Spider):
             'dl.listing-details dt:contains("Furniture / Fixtures value:") + dd::text').get()
         inventory_stock_value = other_information_div.css(
             'dl.listing-details dt:contains("Inventory / Stock value:") + dd::text').get()
+        listing_photos = response.css('#listing-gallery > ul > li > a > img::attr(src)').getall()
+        dynamic_dict = {}
+        for index, url in enumerate(listing_photos, start=1):
+            dynamic_dict[f"link-{index}"] = url
+        source = response.css("title#logo-dt-title::text").get()
+        listed_by = response.css("div.broker-details div.with-logo h4::text").get()
         yield {
             "businessOpportunity": {
+                "article_url": response.url,
+                "source": source.strip() if source else None,
+                "businessListedBy": listed_by.strip() if listed_by else None,
                 "ad_id": ad_id.strip() if ad_id else None,
                 "title": title.strip() if title else None,
                 "category": category.strip() if category else None,
                 "location": location.strip() if location else None,
+                "listing-photos": json.dumps(dynamic_dict),
                 "asking_price": asking_price.strip() if asking_price else None,
                 "sales_revenue": sales_revenue.strip() if sales_revenue is not None else None,
                 "cash_flow": cash_flow.strip() if cash_flow is not None else None,
                 "business_description": remove_special_characters(business_description_text.strip()) if business_description_text is not None else None,
-                "detailedInformation": {
+                "detailedInformation": json.dumps({
                     'reasons_for_selling': reasons_for_selling.strip() if reasons_for_selling else None,
                     'employees': employees.strip() if employees else None,
                     'years_established': years_established.strip() if years_established else None,
                     "support_and_training": support_training.strip() if support_training else None,
                     "furniture_fixtures_value": furniture_fixtures_value.strip() if furniture_fixtures_value else None,
                     "inventory_stock_value": inventory_stock_value.strip() if inventory_stock_value else None
-                }
+                })
             }
         }
