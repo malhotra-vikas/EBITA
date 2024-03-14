@@ -24,15 +24,6 @@ def get_file_format(bucket_name, file_key):
     return None
 
 
-def get_input_urls_from_local_fs(folder_name):
-    # Open the file with the appropriate mode ('r' for reading text, 'rb' for reading bytes)
-
-    with open(folder_name) as file:
-        input_urls = file.read().split('\n')
-
-    return input_urls
-
-
 def get_input_urls_from_s3(bucket_name, file_key, file_format):
     s3 = S3BucketManager(bucket_name)
     obj = s3.get_object(bucket_name, file_key)

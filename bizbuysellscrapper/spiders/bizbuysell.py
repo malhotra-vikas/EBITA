@@ -14,6 +14,14 @@ def remove_special_characters(text):
     pattern = r'[^\w\s.,\'"&\-\®™©€\r\n\t]+'
     return re.sub(pattern, '', text)
 
+def get_input_urls_from_local_fs(folder_name):
+    # Open the file with the appropriate mode ('r' for reading text, 'rb' for reading bytes)
+
+    with open(folder_name) as file:
+        input_urls = file.read().split('\n')
+
+    return input_urls
+
 class BizbuysellSpider(scrapy.Spider):
     name = "bizbuysell"
 
@@ -22,6 +30,7 @@ class BizbuysellSpider(scrapy.Spider):
 
     def start_requests(self):
         isTest = settings.get("IS_TEST")
+        
         # Running Local tests
         if isTest: 
             urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA/urls.txt")
