@@ -16,36 +16,46 @@ def remove_special_characters(text):
 
 class BizbuysellSpider(scrapy.Spider):
     name = "bizbuysell"
-    
 
     def __init__(self):
         self.visited_urls = set()
 
     def start_requests(self):
-        # Get S3 bucket name from settings
-        s3_bucket_name = settings.get("INPUT_S3_BUCKET_NAME")
-        source_bucket_name = settings.get("SOURCE_BUCKET_NAME")
-
-        if not s3_bucket_name:
-            custom_logger.error("Please provide INPUT_S3_BUCKET_NAME environment variable.")
-            return
-
-        s3 = S3BucketManager(s3_bucket_name)
-
-        response = s3.list_objects()
-        for input_file_key in response:
-
-            file_format = get_file_format(s3_bucket_name, input_file_key)
-
-            urls = get_input_urls_from_s3(s3_bucket_name, input_file_key, file_format)
-            s3.move_object(input_file_key,source_bucket_name,input_file_key)
+        isTest = settings.get("IS_TEST")
+        # Running Local tests
+        if isTest: 
+            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA/urls.txt")
             for url in urls:
                 url = url.strip()
                 if url not in self.visited_urls:
                     self.visited_urls.add(url)
                     custom_logger.info('Requesting Main URL: %s', url)
                     yield scrapy.Request(url, callback=self.parse)
-        
+        # Running version where file is read from S3
+        else:
+            # Get S3 bucket name from settings
+            s3_bucket_name = settings.get("INPUT_S3_BUCKET_NAME")
+            source_bucket_name = settings.get("SOURCE_BUCKET_NAME")
+
+            if not s3_bucket_name:
+                custom_logger.error("Please provide INPUT_S3_BUCKET_NAME environment variable.")
+                return
+
+            s3 = S3BucketManager(s3_bucket_name)
+
+            response = s3.list_objects()
+            for input_file_key in response:
+
+                file_format = get_file_format(s3_bucket_name, input_file_key)
+
+                urls = get_input_urls_from_s3(s3_bucket_name, input_file_key, file_format)
+                s3.move_object(input_file_key,source_bucket_name,input_file_key)
+                for url in urls:
+                    url = url.strip()
+                    if url not in self.visited_urls:
+                        self.visited_urls.add(url)
+                        custom_logger.info('Requesting Main URL: %s', url)
+                        yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
         custom_logger.info('Parsing URL: %s', response.url)
@@ -127,6 +137,8 @@ class BizbuysellSpider(scrapy.Spider):
         support_training = response.css(
             'dl.listingProfile_details dt:contains("Support & Training:") + dd::text').get()
         business_listed_by = response.css('div.broker h4 span::text').get()
+        broker = response.css('div.broker-card').get()
+        custom_logger.info('Broker: %s', broker)
 
         # Extracting image URLs from the ul#image-gallery container
         listing_photos = response.css(
@@ -160,6 +172,7 @@ class BizbuysellSpider(scrapy.Spider):
                 "location": location,
                 "listing-photos": json.dumps(dynamic_dict),
                 "businessListedBy": business_listed_by.strip() if business_listed_by is not None else None,
+                "broker": broker,
                 "asking_price": asking_price,
                 "cash_flow": cash_flow.strip() if cash_flow is not None else None,
                 "rent": rent.strip() if rent is not None else None,
