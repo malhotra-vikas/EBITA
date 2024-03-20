@@ -103,6 +103,7 @@ TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
 DOWNLOAD_DELAY = 2
+AUTOTHROTTLE_ENABLED = True
 
 ITEM_PIPELINES = {
     'bizbuysellscrapper.pipelines.DynamoDBPipeline': 300,
