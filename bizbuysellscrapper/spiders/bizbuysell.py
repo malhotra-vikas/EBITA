@@ -105,6 +105,8 @@ class BizbuysellSpider(scrapy.Spider):
 
         custom_logger.info('Parsing article URL: %s', response.url)
         article_id = response.meta.get('article_id')
+        custom_logger.info('article_id: %s', article_id)
+
         # Parse the HTML content using BeautifulSoup
         article_url = response.url
         businesses_title = response.meta.get("businesses_title")
@@ -147,7 +149,6 @@ class BizbuysellSpider(scrapy.Spider):
             'dl.listingProfile_details dt:contains("Support & Training:") + dd::text').get()
         business_listed_by = response.css('div.broker h4 span::text').get()
         broker = response.css('div.broker-card').get()
-        custom_logger.info('Broker: %s', broker)
 
         alternate_broker = response.css('div.seller-container col-12').get()
 
@@ -157,7 +158,6 @@ class BizbuysellSpider(scrapy.Spider):
             phone_link = soup.find('a', href=True, attrs={'class': 'gtm_tpn'})  # This looks for an <a> tag with class 'gtm_tpn'
             alternate_phone_link = soup.find('a', href=lambda href: href and href.startswith('tel:'))
 
-            custom_logger.info('alternate_phone_link: %s', alternate_phone_link)
 
             if phone_link and phone_link.has_attr('href'):
                 phone_number = phone_link['href'].replace('tel:', '')  # Extracts and cleans the phone number
@@ -170,9 +170,6 @@ class BizbuysellSpider(scrapy.Spider):
 
             broker_link = soup.find('a', href=True, attrs={'class': 'broker-name'})  # This looks for an <a> tag with class 'gtm_tpn'
             alternate_broker_link = soup.find('div', class_='broker-card')
-
-            custom_logger.info('alternate_broker_link: %s', alternate_broker_link)
-
 
             if broker_link and broker_link.has_attr('href'):
                 broker_name = broker_link.text
