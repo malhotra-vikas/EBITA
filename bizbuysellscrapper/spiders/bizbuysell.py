@@ -33,7 +33,7 @@ class BizbuysellSpider(scrapy.Spider):
         
         # Running Local tests
         if isTest: 
-            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA/urls.txt")
+            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA-1/test.txt")
             for url in urls:
                 url = url.strip()
                 if url not in self.visited_urls:
@@ -149,6 +149,58 @@ class BizbuysellSpider(scrapy.Spider):
         broker = response.css('div.broker-card').get()
         custom_logger.info('Broker: %s', broker)
 
+        alternate_broker = response.css('div.seller-container col-12').get()
+
+        # Assuming 'broker' variable contains the updated HTML snippet with the broker-card information
+        if broker:
+            soup = BeautifulSoup(broker, 'html.parser')
+            phone_link = soup.find('a', href=True, attrs={'class': 'gtm_tpn'})  # This looks for an <a> tag with class 'gtm_tpn'
+            alternate_phone_link = soup.find('a', href=lambda href: href and href.startswith('tel:'))
+
+            custom_logger.info('alternate_phone_link: %s', alternate_phone_link)
+
+            if phone_link and phone_link.has_attr('href'):
+                phone_number = phone_link['href'].replace('tel:', '')  # Extracts and cleans the phone number
+                custom_logger.info('Broker Phone Number: %s', phone_number)
+            elif alternate_phone_link:
+                phone_number = alternate_phone_link['href'].replace('tel:', '').strip()
+            else:
+                phone_number = "Not Found"
+                custom_logger.info('Broker Phone Number not found.')
+
+            broker_link = soup.find('a', href=True, attrs={'class': 'broker-name'})  # This looks for an <a> tag with class 'gtm_tpn'
+            alternate_broker_link = soup.find('div', class_='broker-card')
+
+            custom_logger.info('alternate_broker_link: %s', alternate_broker_link)
+
+
+            if broker_link and broker_link.has_attr('href'):
+                broker_name = broker_link.text
+                custom_logger.info('Broker Name: %s', broker_name)
+            elif alternate_broker_link:
+                br_tag = alternate_broker_link.find('br')
+                if br_tag and br_tag.next_sibling:
+                    broker_name = br_tag.next_sibling.strip()
+
+            else:
+                broker_name = "Not Found"
+                custom_logger.info('broker name not found.')
+        elif alternate_broker:
+            soup = BeautifulSoup(alternate_broker, 'html.parser')
+            # Extract the broker's name
+            first_name = soup.find('div', class_='profile-first-name').get_text(strip=True)
+            last_name = soup.find('div', class_='profile-last-name').get_text(strip=True)
+            broker_name = f"{first_name} {last_name}"
+            
+            # Extract the phone number
+            phone_link = soup.find('a', class_='profile-phone')
+            phone_number = phone_link.get_text(strip=True) if phone_link else "Not Found"
+
+        else:
+            broker_name = "Not Found"
+            phone_number = "Not Found"
+        
+
         # Extracting image URLs from the ul#image-gallery container
         listing_photos = response.css(
             'ul#image-gallery img.image::attr(src), div.swiper-wrapper div img.swiper-image::attr(src)').getall()
@@ -173,7 +225,7 @@ class BizbuysellSpider(scrapy.Spider):
             dynamic_dict[f"link-{index}"] = url
         yield  {
             "businessOpportunity": {
-                "ad_id":str(article_id),
+                "ad_id":str(article_id)+"_BBS",
                 "source": "BizBuySell",
                 "article_url":article_url if article_url else None,
                 "category":businesses_title.strip() if businesses_title else None,
@@ -181,7 +233,9 @@ class BizbuysellSpider(scrapy.Spider):
                 "location": location,
                 "listing-photos": json.dumps(dynamic_dict),
                 "businessListedBy": business_listed_by.strip() if business_listed_by is not None else None,
-                "broker": broker,
+                #"broker": broker,
+                "broker-phone": phone_number,
+                "broker-name": broker_name,
                 "asking_price": asking_price,
                 "cash_flow": cash_flow.strip() if cash_flow is not None else None,
                 "rent": rent.strip() if rent is not None else None,

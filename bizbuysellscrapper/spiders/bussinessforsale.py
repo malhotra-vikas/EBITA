@@ -15,6 +15,13 @@ def remove_special_characters(text):
     pattern = r'[^\w\s.,\'"&\-\®™©€\r\n\t]+'
     return re.sub(pattern, '', text)
 
+def get_input_urls_from_local_fs(folder_name):
+    # Open the file with the appropriate mode ('r' for reading text, 'rb' for reading bytes)
+
+    with open(folder_name) as file:
+        input_urls = file.read().split('\n')
+
+    return input_urls
 
 class BussinessforsaleSpider(scrapy.Spider):
     name = "bussinessforsale"
@@ -23,31 +30,42 @@ class BussinessforsaleSpider(scrapy.Spider):
         self.visited_urls = set()
 
     def start_requests(self):
-        # Get S3 bucket name from settings
-        s3_bucket_name = settings.get("INPUT_S3_BUCKET_NAME")
-        source_bucket_name = settings.get("SOURCE_BUCKET_NAME")
-
-        if not s3_bucket_name:
-            custom_logger.error(
-                "Please provide INPUT_S3_BUCKET_NAME environment variable.")
-            return
-
-        s3 = S3BucketManager(s3_bucket_name)
-
-        response = s3.list_objects()
-        for input_file_key in response:
-
-            file_format = get_file_format(s3_bucket_name, input_file_key)
-
-            urls = get_input_urls_from_s3(
-                s3_bucket_name, input_file_key, file_format)
-            s3.move_object(input_file_key, source_bucket_name, input_file_key)
+        isTest = settings.get("IS_TEST")
+        # Running Local tests
+        if isTest: 
+            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA-1/test.txt")
             for url in urls:
                 url = url.strip()
                 if url not in self.visited_urls:
                     self.visited_urls.add(url)
                     custom_logger.info('Requesting Main URL: %s', url)
                     yield scrapy.Request(url, callback=self.parse)
+        else:
+            # Get S3 bucket name from settings
+            s3_bucket_name = settings.get("INPUT_S3_BUCKET_NAME")
+            source_bucket_name = settings.get("SOURCE_BUCKET_NAME")
+
+            if not s3_bucket_name:
+                custom_logger.error(
+                    "Please provide INPUT_S3_BUCKET_NAME environment variable.")
+                return
+
+            s3 = S3BucketManager(s3_bucket_name)
+
+            response = s3.list_objects()
+            for input_file_key in response:
+
+                file_format = get_file_format(s3_bucket_name, input_file_key)
+
+                urls = get_input_urls_from_s3(
+                    s3_bucket_name, input_file_key, file_format)
+                s3.move_object(input_file_key, source_bucket_name, input_file_key)
+                for url in urls:
+                    url = url.strip()
+                    if url not in self.visited_urls:
+                        self.visited_urls.add(url)
+                        custom_logger.info('Requesting Main URL: %s', url)
+                        yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
         self.logger.info('Parsing URL: %s', response.url)
@@ -101,22 +119,28 @@ class BussinessforsaleSpider(scrapy.Spider):
         for index, url in enumerate(listing_photos, start=1):
             dynamic_dict[f"link-{index}"] = url
         source = response.css("title#logo-dt-title::text").get()
+        custom_logger.info('Logging source: %s', source)
+
         listed_by = response.css("div.broker-details div.with-logo h4::text").get()
         yield {
             "businessOpportunity": {
+                "ad_id": ad_id.strip()+"_BFS" if ad_id else None,
+                "source": "BusinessForSale",
                 "article_url": response.url,
-                "source": source.strip() if source else None,
-                "businessListedBy": listed_by.strip() if listed_by else None,
-                "ad_id": ad_id.strip() if ad_id else None,
-                "title": title.strip() if title else None,
                 "category": category.strip() if category else None,
+                "title": title.strip() if title else None,
                 "location": location.strip() if location else None,
                 "listing-photos": json.dumps(dynamic_dict),
+                "businessListedBy": listed_by.strip() if listed_by else None,
+                "broker-phone":"Need to find",
+                "broker-name":"Need to find",
                 "asking_price": asking_price.strip() if asking_price else None,
-                "sales_revenue": sales_revenue.strip() if sales_revenue is not None else None,
                 "cash_flow": cash_flow.strip() if cash_flow is not None else None,
-                "business_description": remove_special_characters(business_description_text.strip()) if business_description_text is not None else None,
+                "rent":"Not Available",
+                "established": "Not Available",
+                "gross_revenue": sales_revenue.strip() if sales_revenue is not None else None,
                 "detailedInformation": json.dumps({
+                    'business_description': remove_special_characters(business_description_text.strip()) if business_description_text is not None else None,
                     'reasons_for_selling': reasons_for_selling.strip() if reasons_for_selling else None,
                     'employees': employees.strip() if employees else None,
                     'years_established': years_established.strip() if years_established else None,
@@ -124,5 +148,6 @@ class BussinessforsaleSpider(scrapy.Spider):
                     "furniture_fixtures_value": furniture_fixtures_value.strip() if furniture_fixtures_value else None,
                     "inventory_stock_value": inventory_stock_value.strip() if inventory_stock_value else None
                 })
+
             }
         }

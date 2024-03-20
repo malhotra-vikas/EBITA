@@ -53,4 +53,6 @@ class S3Pipeline:
             key=f"{spider.name}_{item_list[0]['ad_id']}.json",
             body=json.dumps(item_list)
         )
+        print("Dumping at ", f"{spider.name}_{item_list[0]['ad_id']}.json")
+        
         return item_list
