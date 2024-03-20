@@ -87,7 +87,7 @@ class BussinessforsaleSpider(scrapy.Spider):
 
     def parse_article(self, response):
         self.logger.info('Parsing article URL: %s', response.url)
-        ad_id = response.css("span#listing-id::text").get()
+        ad_id = response.css("span#listing-id::text").get()+"_BFS",
         title = response.css('title::text').get()
         category = response.meta.get("businesses_title")
         location = response.css('div#address > span::text').get()
