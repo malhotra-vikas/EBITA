@@ -119,7 +119,6 @@ class BussinessforsaleSpider(scrapy.Spider):
         for index, url in enumerate(listing_photos, start=1):
             dynamic_dict[f"link-{index}"] = url
         source = response.css("title#logo-dt-title::text").get()
-        custom_logger.info('Logging source: %s', source)
 
         listed_by = response.css("div.broker-details div.with-logo h4::text").get()
         yield {

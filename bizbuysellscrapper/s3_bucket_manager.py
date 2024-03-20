@@ -45,9 +45,7 @@ class S3BucketManager:
             Bucket=bucket_name,
             Key=key,
             Body=body
-        )
-        custom_logger.info("Json file added successfully in s3 bucket", bucket_name, key)
-        
+        )        
 
     def head_object(self, bucket_name,object_name):
         try:
