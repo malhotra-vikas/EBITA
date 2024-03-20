@@ -102,8 +102,12 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 2.0
 AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 5  # Initial download delay
+AUTOTHROTTLE_MAX_DELAY = 60  # Maximum download delay
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0  # Aim for 1 request at a time
+AUTOTHROTTLE_DEBUG = False  # Set to True to see AutoThrottle debug in logs
 
 ITEM_PIPELINES = {
     'bizbuysellscrapper.pipelines.DynamoDBPipeline': 300,
@@ -119,8 +123,6 @@ SOURCE_BUCKET_NAME=os.environ.get("SOURCE_BUCKET_NAME")
 DYNAMODB_TABLE_NAME=os.environ.get("DYNAMODB_TABLE_NAME")
 FILE_INPUT_KEY=os.environ.get("FILE_INPUT_KEY")
 IS_TEST =  os.environ.get('IS_TEST')
-
-
 
 
 # Create a custom logger for your project
