@@ -88,6 +88,8 @@ class BussinessforsaleSpider(scrapy.Spider):
     def parse_article(self, response):
         self.logger.info('Parsing article URL: %s', response.url)
         ad_id = response.css("span#listing-id::text").get()+"_BFS",
+        self.logger.info('Parsing ad_id: %s', ad_id)
+
         title = response.css('title::text').get()
         category = response.meta.get("businesses_title")
         location = response.css('div#address > span::text').get()
@@ -118,12 +120,12 @@ class BussinessforsaleSpider(scrapy.Spider):
         dynamic_dict = {}
         for index, url in enumerate(listing_photos, start=1):
             dynamic_dict[f"link-{index}"] = url
-        source = response.css("title#logo-dt-title::text").get()
+        #source = response.css("title#logo-dt-title::text").get()
 
         listed_by = response.css("div.broker-details div.with-logo h4::text").get()
         yield {
             "businessOpportunity": {
-                "ad_id": ad_id.strip()+"_BFS" if ad_id else None,
+                "ad_id": ad_id if ad_id else None,
                 "source": "BusinessForSale",
                 "article_url": response.url,
                 "category": category.strip() if category else None,

@@ -131,3 +131,7 @@ custom_logger.setLevel(logging.DEBUG)  # Set the desired logging level
 
 # Disable all other loggers
 logging.disable(logging.DEBUG)
+
+
+# Adding to make Business FOr Sale Work
+DEPTH_LIMIT = 3  # Adjust based on your needs
