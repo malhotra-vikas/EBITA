@@ -33,7 +33,7 @@ class BizbuysellSpider(scrapy.Spider):
         
         # Running Local tests
         if isTest: 
-            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA-2/bizbuysell-urls.txt")
+            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA/bizbuysell-urls.txt")
             for url in urls:
                 url = url.strip()
                 if url not in self.visited_urls:
