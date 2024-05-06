@@ -50,6 +50,9 @@ def debt_calculator_handler(event, context):
     net_cash_flow = cash_flow - pmt
 
     debt_service_coverage = cash_flow / pmt
+    
+    # Calculate Payback Period
+    payback_period = (revenue * 0.1) / (net_cash_flow / 12)
 
     # Construct the response body
     response_body = {
@@ -64,10 +67,11 @@ def debt_calculator_handler(event, context):
             "loan_amount": loan_amount,
             "term_years": termYears,
             "term_months": term_months,
-            "annual_debt_service": round(-pmt),
+            "annual_debt_service": round(pmt),
             "net_cash_flow": round(net_cash_flow),
             "CF_margin": round(cfMargin),
-            "debt_service_coverage": round(debt_service_coverage, 1)
+            "debt_service_coverage": round(debt_service_coverage, 1),
+            "payback_period": round(payback_period, 1)  # Rounded to 2 decimal places
         }
     }
 
