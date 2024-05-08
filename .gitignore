@@ -3,6 +3,7 @@
 __pycache__/
 EBITAVenv/
 myenv/
+venv/
 
 # Other generated files
 *.log
