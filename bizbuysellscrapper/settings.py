@@ -1,6 +1,7 @@
 import os
 import dotenv
 import logging
+from datetime import datetime
 
 dotenv.load_dotenv()
 
@@ -121,9 +122,17 @@ INPUT_S3_BUCKET_NAME=os.environ.get("INPUT_S3_BUCKET_NAME")
 OUTPUT_S3_BUCKET_NAME=os.environ.get("OUTPUT_S3_BUCKET_NAME")
 SOURCE_BUCKET_NAME=os.environ.get("SOURCE_BUCKET_NAME")
 DYNAMODB_TABLE_NAME=os.environ.get("DYNAMODB_TABLE_NAME")
+
 FILE_INPUT_KEY=os.environ.get("FILE_INPUT_KEY")
 IS_TEST =  os.environ.get('IS_TEST')
 
+# Get today's date in the format YYYYMMDD
+today_date = datetime.now().strftime("%Y%m%d")
+
+# Append today's date to the DDB Table
+DYNAMODB_TABLE_NAME = f"{DYNAMODB_TABLE_NAME}-{today_date}"
+
+KEY_FILE_NAME = DYNAMODB_TABLE_NAME
 
 # Create a custom logger for your project
 custom_logger = logging.getLogger('custom_logger')

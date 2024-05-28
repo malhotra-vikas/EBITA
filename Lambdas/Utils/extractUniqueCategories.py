@@ -1,19 +1,28 @@
 import json
 import re
+import pandas as pd
+
 
 # Load the data from a JSON file
-with open('/Users/vikas/builderspace/EBITA-2/Lambdas/Utils/bizbuysell_2041937_BBS.json', 'r') as file:
+with open('/Users/vikas/builderspace/EBITA/Lambdas/Utils/bizbuysell_1114_BBS.json', 'r') as file:
     ads_data = json.load(file)
 
-# Function to clean up the category name
-def clean_category(category: str) -> str:
-    return re.sub(r'\s+For Sale$', '', category)
 
-# Use a set to collect unique categories, cleaning each category name
-unique_categories = {clean_category(ad['category']) for ad in ads_data if 'category' in ad and ad['category']}
+# Create a DataFrame from the list of JSON objects
+df = pd.DataFrame(ads_data)
 
-# Convert the set to a sorted list for better organization
-sorted_categories = sorted(unique_categories)
+# Assuming 'category' is a key in each JSON object, which seems to be your use case
+category_counts = df['category'].value_counts()
 
-# Print the cleaned unique categories
-print(sorted_categories)
+# Assuming 'category' is a key in each JSON object
+if 'category' in df.columns:
+    category_counts = df['category'].value_counts()
+    
+    # Convert the Series to DataFrame for better handling
+    category_counts_df = category_counts.reset_index()
+    category_counts_df.columns = ['Category', 'Count']
+
+
+    print(category_counts)
+else:
+    print("The 'category' column does not exist in the data.")

@@ -4,9 +4,12 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+import subprocess  # for running the python command
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
+
+from bizbuysellscrapper.spiders.bizbuysell import rebuild_business_description_post_spider_command
 
 
 class BizbuysellscrapperSpiderMiddleware:
@@ -55,6 +58,10 @@ class BizbuysellscrapperSpiderMiddleware:
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
 
+    def spider_closed(self, spider):
+        spider.logger.info("Spider closed: %s" % spider.name)
+        rebuild_business_description_post_spider_command()
+
 
 class BizbuysellscrapperDownloaderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -101,3 +108,6 @@ class BizbuysellscrapperDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+    def spider_closed(self, spider):
+        spider.logger.info(f"Spider {spider.name} closed. Running post-spider command.")

@@ -10,6 +10,7 @@ from bizbuysellscrapper.db import DynamoDBManager
 from bizbuysellscrapper.schema import ScrappedDataSchema
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
 from scrapy.utils.project import get_project_settings
+from datetime import datetime
 
 settings = get_project_settings()
 
@@ -23,6 +24,7 @@ class DynamoDBPipeline:
     def process_item(self, item, spider):
         self.dynamodb.put_item(dict(item).get("businessOpportunity"))
         return item
+    
     
 
 class S3Pipeline:
@@ -46,11 +48,17 @@ class S3Pipeline:
     def save_item(self, item_list, spider):
         # Get or create the bucket
         bucket = self.get_or_create_bucket()
-         
+
+        # Get today's date in the format YYYYMMDD
+        today_date = datetime.now().strftime("%Y%m%d")
+
+        # Append today's date to the DDB Table
+        JSON_NAME = f"{spider.name}_{today_date}.json"
+
         # Put the item into the bucket
         self.s3_manager.put_object(
             bucket_name=bucket,
-            key=f"{spider.name}_{item_list[0]['ad_id']}.json",
+            key=JSON_NAME,
             body=json.dumps(item_list)
         )
         
