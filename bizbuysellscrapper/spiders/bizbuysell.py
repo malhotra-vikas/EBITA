@@ -3,6 +3,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
 from bizbuysellscrapper.s3_utils import get_file_format, get_input_urls_from_s3
 from scrapy.utils.project import get_project_settings
@@ -14,6 +15,7 @@ from scrapy import signals
 settings = get_project_settings()
 key_file_name = settings.get("KEY_FILE_NAME")
 
+'''
 def rebuild_business_description_post_spider_command():
     try:
         # Replace 'python your_command.py' with the command you want to run
@@ -24,7 +26,7 @@ def rebuild_business_description_post_spider_command():
             custom_logger.error(f"Post-spider command failed with error: {result.stderr}")
     except Exception as e:
         custom_logger.error(f"Error running post-spider command: {str(e)}")
-
+'''
 def remove_special_characters(text):
     pattern = r'[^\w\s.,\'"&\-\®™©€\r\n\t]+'
     return re.sub(pattern, '', text)
@@ -40,11 +42,15 @@ def get_input_urls_from_local_fs(folder_name):
 class BizbuysellSpider(scrapy.Spider):
     name = "bizbuysell"
 
+    def __init__(self):
+        self.visited_urls = set()
+
+    '''
     def __init__(self, *args, **kwargs):
         super(BizbuysellSpider, self).__init__(*args, **kwargs)
         self.visited_urls = set()
         dispatcher.connect(self.spider_closed, signal=signals.spider_closed)
-
+    '''
 
     def start_requests(self):
         isTest = settings.get("IS_TEST")
@@ -126,9 +132,9 @@ class BizbuysellSpider(scrapy.Spider):
         article_id = response.meta.get('article_id')
         custom_logger.info('article_id: %s', article_id)
 
-        adid = article_id+"_BBS"
-        with open("/Users/vikas/builderspace/EBITA/files/"+key_file_name, 'a') as file:
-            file.write(adid + '\n')
+#        adid = article_id+"_BBS"
+#        with open("/Users/vikas/builderspace/EBITA/files/"+key_file_name, 'a') as file:
+#            file.write(adid + '\n')
 
         # Parse the HTML content using BeautifulSoup
         article_url = response.url
@@ -197,7 +203,8 @@ class BizbuysellSpider(scrapy.Spider):
         raw_business_description = response.xpath("//div[@class='businessDescription f-m word-break']//text()").getall()
         cleaned_business_description = ' '.join([desc.strip() for desc in raw_business_description if desc.strip()])
         cleaned_business_description = cleaned_business_description.replace('\r', '').replace('\n', '')
-        business_description_text = cleaned_business_description if cleaned_business_description else 'NA'
+        scraped_business_description_text = cleaned_business_description if cleaned_business_description else 'NA'
+        business_description = generate_readable_description(scraped_business_description_text)
         
         # Attached Documents
         attached_documents = response.xpath("//div[@class='attachedFiles']//a/@href").getall()
@@ -338,7 +345,8 @@ class BizbuysellSpider(scrapy.Spider):
                 "rent": rent.strip() if rent is not None else None,
                 "established": established.strip() if established is not None else None,
                 "gross_revenue": gross_revenue.strip() if gross_revenue is not None else None,
-                "scraped_business_description": business_description_text,
+                "scraped_business_description": scraped_business_description_text,
+               "business_description": business_description, 
                 "EBITDA": ebitda,
                 "FF&E": ffe,
                 "inventory": inventory,
@@ -358,4 +366,4 @@ class BizbuysellSpider(scrapy.Spider):
 
     def spider_closed(self, spider):
         custom_logger.info(f"Spider {spider.name} closed. Running post-spider command.")
-        rebuild_business_description_post_spider_command()
+#        rebuild_business_description_post_spider_command()
