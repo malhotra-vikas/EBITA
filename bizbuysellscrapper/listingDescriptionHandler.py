@@ -49,3 +49,24 @@ def generate_readable_description(business_description):
     readable_description = chat_completion.choices[0].message. content.strip()
 
     return readable_description
+
+
+def generate_readable_title_withAI(business_description):
+    prompt = (f"Convert the following verbose business description into a concise, "
+              f"human-readable and attention catching product title with 6 words:\n\n{business_description}")
+
+    # Create a chat completion using the OpenAI API
+    chat_completion = client.chat.completions.create(
+        model="gpt-3.5-turbo",  # Ensure this model is available or update as necessary
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=200
+    )
+
+    print(f"Updated title {chat_completion}.")
+
+    generated_title = chat_completion.choices[0].message. content.strip()
+
+    return generated_title

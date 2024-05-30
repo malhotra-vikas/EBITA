@@ -3,7 +3,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description
+from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description, generate_readable_title_withAI
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
 from bizbuysellscrapper.s3_utils import get_file_format, get_input_urls_from_s3
 from scrapy.utils.project import get_project_settings
@@ -205,7 +205,9 @@ class BizbuysellSpider(scrapy.Spider):
         cleaned_business_description = cleaned_business_description.replace('\r', '').replace('\n', '')
         scraped_business_description_text = cleaned_business_description if cleaned_business_description else 'NA'
         business_description = generate_readable_description(scraped_business_description_text)
-        
+
+        title = generate_readable_title_withAI(business_description)
+
         # Attached Documents
         attached_documents = response.xpath("//div[@class='attachedFiles']//a/@href").getall()
         if not attached_documents:
