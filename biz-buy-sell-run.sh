@@ -13,7 +13,8 @@ echo "Job completed successfully."
 
 # Send an email notification
 SUBJECT="Cron Job Completed"
-TO="malhotra.vikas@gmail.com", "arora.silky@gmail.com"
+TO="malhotra.vikas@gmail.com, arora.silky@gmail.com"
+
 MESSAGE="The BizBuySell cron job that runs at 2 AM has completed successfully."
 
 echo $MESSAGE | mail -s "$SUBJECT" $TO

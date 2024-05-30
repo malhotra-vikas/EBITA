@@ -154,7 +154,7 @@ class BizbuysellSpider(scrapy.Spider):
         dynamic_dict = {}
         listing_photos = response.xpath("//div[@id='slider']//img/@src").getall()
         if not listing_photos:
-            listing_photos = 'NA'
+            dynamic_dict[f"link-1"] = "https://publiclistingphotos.s3.amazonaws.com/no-photo.jpg"
         else:
             for index, url in enumerate(listing_photos, start=1):
                 dynamic_dict[f"link-{index}"] = url
