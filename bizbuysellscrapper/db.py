@@ -15,6 +15,15 @@ class DynamoDBManager:
             aws_access_key_id=settings.get("AWS_ACCESS_KEY_ID"),
             aws_secret_access_key=settings.get("AWS_SECRET_ACCESS_KEY"),
         )
+
+        # Highlighted Change: Initialize application-autoscaling client
+        self.application_autoscaling = boto3.client(
+            "application-autoscaling",
+            region_name=settings.get("AWS_REGION_NAME"),
+            aws_access_key_id=settings.get("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=settings.get("AWS_SECRET_ACCESS_KEY"),
+        )
+
         self.table = self.dynamodb.Table(table_name)
     
     def create_table(self, KeySchema, AttributeDefinitions):
@@ -25,6 +34,58 @@ class DynamoDBManager:
             ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
         )
         table.meta.client.get_waiter("table_exists").wait(TableName=self.table_name)
+
+        # Configure Auto Scaling for read capacity
+        self.application_autoscaling.register_scalable_target(
+            ServiceNamespace='dynamodb',
+            ResourceId=f'table/{self.table_name}',
+            ScalableDimension='dynamodb:table:ReadCapacityUnits',
+            MinCapacity=5,
+            MaxCapacity=100,
+        )
+
+        self.application_autoscaling.put_scaling_policy(
+            ServiceNamespace='dynamodb',
+            ResourceId=f'table/{self.table_name}',
+            ScalableDimension='dynamodb:table:ReadCapacityUnits',
+            PolicyName='ReadAutoScalingPolicy',
+            PolicyType='TargetTrackingScaling',
+            TargetTrackingScalingPolicyConfiguration={
+                'TargetValue': 70.0,
+                'PredefinedMetricSpecification': {
+                    'PredefinedMetricType': 'DynamoDBReadCapacityUtilization'
+                },
+                'ScaleInCooldown': 60,
+                'ScaleOutCooldown': 60
+            }
+        )
+
+        # Configure Auto Scaling for write capacity
+        self.application_autoscaling.register_scalable_target(
+            ServiceNamespace='dynamodb',
+            ResourceId=f'table/{self.table_name}',
+            ScalableDimension='dynamodb:table:WriteCapacityUnits',
+            MinCapacity=5,
+            MaxCapacity=100,
+        )
+        
+        self.application_autoscaling.put_scaling_policy(
+            ServiceNamespace='dynamodb',
+            ResourceId=f'table/{self.table_name}',
+            ScalableDimension='dynamodb:table:WriteCapacityUnits',
+            PolicyName='WriteAutoScalingPolicy',
+            PolicyType='TargetTrackingScaling',
+            TargetTrackingScalingPolicyConfiguration={
+                'TargetValue': 70.0,
+                'PredefinedMetricSpecification': {
+                    'PredefinedMetricType': 'DynamoDBWriteCapacityUtilization'
+                },
+                'ScaleInCooldown': 60,
+                'ScaleOutCooldown': 60
+            }
+        )
+
+
         return table
 
     def get_table(self, schema):
