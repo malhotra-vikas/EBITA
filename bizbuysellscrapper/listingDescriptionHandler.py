@@ -69,6 +69,9 @@ def generate_readable_title_withAI(business_description):
 
     print(f"Updated title {chat_completion}.")
 
-    generated_title = chat_completion.choices[0].message. content.strip()
+    generated_title = chat_completion.choices[0].message.content.strip()
+
+    # Remove quotation marks if present
+    generated_title = generated_title.replace('"', '').replace("'", "")
 
     return generated_title
