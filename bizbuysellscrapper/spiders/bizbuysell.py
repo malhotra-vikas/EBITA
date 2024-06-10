@@ -203,10 +203,16 @@ class BizbuysellSpider(scrapy.Spider):
         raw_business_description = response.xpath("//div[@class='businessDescription f-m word-break']//text()").getall()
         cleaned_business_description = ' '.join([desc.strip() for desc in raw_business_description if desc.strip()])
         cleaned_business_description = cleaned_business_description.replace('\r', '').replace('\n', '')
+        
         scraped_business_description_text = cleaned_business_description if cleaned_business_description else 'NA'
-        business_description = generate_readable_description(scraped_business_description_text)
 
-        title = generate_readable_title_withAI(business_description)
+        if (scraped_business_description_text and scraped_business_description_text != 'NA' and scraped_business_description_text != ""):
+            business_description = generate_readable_description(scraped_business_description_text)
+        else:
+            business_description = raw_business_description
+
+        if (business_description and business_description != 'NA' and business_description != ""):
+            title = generate_readable_title_withAI(business_description)
 
         # Attached Documents
         attached_documents = response.xpath("//div[@class='attachedFiles']//a/@href").getall()
