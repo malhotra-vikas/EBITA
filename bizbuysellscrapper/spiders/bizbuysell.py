@@ -209,10 +209,12 @@ class BizbuysellSpider(scrapy.Spider):
         if (scraped_business_description_text and scraped_business_description_text != 'NA' and scraped_business_description_text != ""):
             business_description = generate_readable_description(scraped_business_description_text)
         else:
-            business_description = raw_business_description
+            business_description = scraped_business_description_text
 
         if (business_description and business_description != 'NA' and business_description != ""):
             title = generate_readable_title_withAI(business_description)
+        else:
+            title = 'NA'
 
         # Attached Documents
         attached_documents = response.xpath("//div[@class='attachedFiles']//a/@href").getall()
