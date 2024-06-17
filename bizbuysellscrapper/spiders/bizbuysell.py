@@ -341,7 +341,7 @@ class BizbuysellSpider(scrapy.Spider):
                 "ad_id":str(article_id)+"_BBS",
                 "source": "BizBuySell",
                 "article_url":article_url if article_url else None,
-                "category":businesses_title.strip() if businesses_title else None,
+                "category":(businesses_title[:-9].strip() if businesses_title.endswith(" For Sale") else businesses_title.strip()) if businesses_title else None,
                 "title": title,
                 "location": location,
                 "listing-photos": json.dumps(dynamic_dict),
