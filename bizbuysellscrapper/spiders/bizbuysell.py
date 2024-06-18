@@ -336,12 +336,43 @@ class BizbuysellSpider(scrapy.Spider):
 #        listing_photos = response.css(
 #            'ul#image-gallery img.image::attr(src), div.swiper-wrapper div img.swiper-image::attr(src)').getall()
         
+        computed_category = (businesses_title[:-9].strip() if businesses_title.endswith(" For Sale") else businesses_title.strip()) if businesses_title else None
+        if computed_category == "Plumbing Businesses":
+            computed_category = "Plumbing"
+
+        if computed_category == "Accounting Businesses and Tax Practices":
+            computed_category = "Accounting"
+
+        if computed_category == "Pest Control Businesses":
+            computed_category = "Pest control"
+
+        if computed_category == "Landscaping and Yard Service Businesses":
+            computed_category = "Landscaping"
+
+        if computed_category == "Websites and Ecommerce Businesses":
+            computed_category = "Ecommerce"
+        
+        if computed_category == "Cleaning Businesses":
+            computed_category = "Cleaning"
+
+        if computed_category == "Vending Machine Businesses":
+            computed_category = "Vending"
+        
+        if computed_category == "Car Washes":
+            computed_category = "Car Wash"
+
+        if computed_category == "HVAC Businesses":
+            computed_category = "HVAC"
+        
+        if computed_category == "Storage Facilities and Warehouses":
+            computed_category = "Self Storage"
+
         yield  {
             "businessOpportunity": {
                 "ad_id":str(article_id)+"_BBS",
                 "source": "BizBuySell",
                 "article_url":article_url if article_url else None,
-                "category":(businesses_title[:-9].strip() if businesses_title.endswith(" For Sale") else businesses_title.strip()) if businesses_title else None,
+                "category":computed_category,
                 "title": title,
                 "location": location,
                 "listing-photos": json.dumps(dynamic_dict),
