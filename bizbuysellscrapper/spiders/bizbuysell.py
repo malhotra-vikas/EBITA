@@ -200,7 +200,7 @@ class BizbuysellSpider(scrapy.Spider):
         if (scraped_business_description_text and scraped_business_description_text != 'NA' and scraped_business_description_text != ""):
             business_description = generate_readable_description(scraped_business_description_text)
 
-            generated_image_url = generate_image_from_AI(business_description, article_id)            
+            generated_image_url = generate_image_from_AI(business_description, article_id, businesses_title)            
         else:
             business_description = scraped_business_description_text
 

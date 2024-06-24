@@ -33,7 +33,7 @@ dotenv.load_dotenv()
 client = OpenAI(api_key=OPENAI_KEY)
 
 
-def generate_image_from_AI(business_description, article_id):
+def generate_image_from_AI(business_description, article_id, businesses_title):
     # Define the API key and endpoint
     api_key = IMAGE_STABILITY_AI_API_KEY
     api_url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
@@ -46,7 +46,8 @@ def generate_image_from_AI(business_description, article_id):
 
     # Define the prompt
     prompt = (
-        "Create a profile image for use on an online marketplace of businesses for sale. The business is: "
+        "Create a profile image for use on an online marketplace of businesses for sale. The business category is " 
+        + businesses_title + ". The business description is :" 
         + business_description
     )
 
