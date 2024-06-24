@@ -3,7 +3,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description, generate_readable_title_withAI
+from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description, generate_readable_title_withAI, generate_image_from_AI
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
 from bizbuysellscrapper.s3_utils import get_file_format, get_input_urls_from_s3
 from scrapy.utils.project import get_project_settings
@@ -154,9 +154,10 @@ class BizbuysellSpider(scrapy.Spider):
         dynamic_dict = {}
         listing_photos = response.xpath("//div[@id='slider']//img/@src").getall()
         if not listing_photos:
-            dynamic_dict[f"link-1"] = "https://publiclistingphotos.s3.amazonaws.com/no-photo.jpg"
+            dynamic_dict[f"link-1"] = generated_image_url
         else:
-            for index, url in enumerate(listing_photos, start=1):
+            dynamic_dict[f"link-1"] = generated_image_url
+            for index, url in enumerate(listing_photos, start=2):
                 dynamic_dict[f"link-{index}"] = url
 
         custom_logger.info('listing_photos: %s', listing_photos)
@@ -208,6 +209,8 @@ class BizbuysellSpider(scrapy.Spider):
 
         if (scraped_business_description_text and scraped_business_description_text != 'NA' and scraped_business_description_text != ""):
             business_description = generate_readable_description(scraped_business_description_text)
+
+            generated_image_url = generate_image_from_AI(business_description, article_id)            
         else:
             business_description = scraped_business_description_text
 
@@ -387,7 +390,8 @@ class BizbuysellSpider(scrapy.Spider):
                 "established": established.strip() if established is not None else None,
                 "gross_revenue": gross_revenue.strip() if gross_revenue is not None else None,
                 "scraped_business_description": scraped_business_description_text,
-               "business_description": business_description, 
+                "business_description": business_description,
+                "generate_image_from_AI": generated_image_url,
                 "EBITDA": ebitda,
                 "FF&E": ffe,
                 "inventory": inventory,
