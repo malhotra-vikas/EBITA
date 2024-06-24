@@ -36,11 +36,13 @@ client = OpenAI(api_key=OPENAI_KEY)
 def generate_image_from_AI(business_description, article_id):
     # Define the API key and endpoint
     api_key = IMAGE_STABILITY_AI_API_KEY
-    api_url = "https://api.stability.ai/v1/generate"
+    api_url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
 
     # Define the S3 bucket and object key
     s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
     s3_object_key = 'generated_images/'+article_id+'_BBS.png'
+    print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
+    print(f"api_key {api_key}.")
 
     # Define the prompt
     prompt = (
@@ -48,36 +50,27 @@ def generate_image_from_AI(business_description, article_id):
         + business_description
     )
 
-
     # Set the headers for the request
-    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "accept": "image/*"
+    }
 
     # Set the payload for the request
-    payload = {
+    data = {
         "prompt": prompt,
-        "width": 512,
-        "height": 512,
-        "samples": 1,
-        "num_inference_steps": 50,
-        "guidance_scale": 7.5,
+        "output_format": "png"
     }
 
     # Make the request to the API
-    response = requests.post(api_url, headers=headers, data=json.dumps(payload))
+    response = requests.post(api_url, headers=headers, files={"none": ''}, data=data)
 
     # Check if the request was successful
     if response.status_code == 200:
-        # Get the generated image from the response
-        response_data = response.json()
-        image_data = response_data['images'][0]['base64']
-
-        # Decode the base64 image data
-        image_bytes = base64.b64decode(image_data)
-
         # Save the image to a file
         local_image_path = 'generated_image.png'
         with open(local_image_path, 'wb') as image_file:
-            image_file.write(image_bytes)
+            image_file.write(response.content)
         
         print('Image generated and saved as generated_image.png')
         
@@ -154,3 +147,6 @@ def generate_readable_title_withAI(business_description):
     generated_title = generated_title.replace('"', "").replace("'", "")
 
     return generated_title
+
+
+
