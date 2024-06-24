@@ -150,18 +150,6 @@ class BizbuysellSpider(scrapy.Spider):
         # Location
         location = response.xpath("//dl[@id='ctl00_ctl00_Content_ContentPlaceHolder1_wideProfile_listingDetails_dlDetailedInformation']/dd[1]/text()").get(default='NA').strip()
         
-        # Listing Photos
-        dynamic_dict = {}
-        listing_photos = response.xpath("//div[@id='slider']//img/@src").getall()
-        if not listing_photos:
-            dynamic_dict[f"link-1"] = generated_image_url
-        else:
-            dynamic_dict[f"link-1"] = generated_image_url
-            for index, url in enumerate(listing_photos, start=2):
-                dynamic_dict[f"link-{index}"] = url
-
-        custom_logger.info('listing_photos: %s', listing_photos)
-
         # Rent
         rent = response.xpath("//dt[contains(text(), 'Rent:')]/following-sibling::dd[1]/text()").get(default='NA').strip()
 
@@ -207,6 +195,8 @@ class BizbuysellSpider(scrapy.Spider):
         
         scraped_business_description_text = cleaned_business_description if cleaned_business_description else 'NA'
 
+        generated_image_url = "https://publiclistingphotos.s3.amazonaws.com/no-photo.jpg"
+
         if (scraped_business_description_text and scraped_business_description_text != 'NA' and scraped_business_description_text != ""):
             business_description = generate_readable_description(scraped_business_description_text)
 
@@ -218,6 +208,18 @@ class BizbuysellSpider(scrapy.Spider):
             title = generate_readable_title_withAI(business_description)
         else:
             title = 'NA'
+
+        # Listing Photos
+        dynamic_dict = {}
+        listing_photos = response.xpath("//div[@id='slider']//img/@src").getall()
+        if not listing_photos:
+            dynamic_dict[f"link-1"] = generated_image_url
+        else:
+            dynamic_dict[f"link-1"] = generated_image_url
+            for index, url in enumerate(listing_photos, start=2):
+                dynamic_dict[f"link-{index}"] = url
+
+        custom_logger.info('listing_photos: %s', listing_photos)
 
         # Attached Documents
         attached_documents = response.xpath("//div[@class='attachedFiles']//a/@href").getall()
