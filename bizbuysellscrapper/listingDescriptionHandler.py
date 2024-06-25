@@ -43,7 +43,7 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     )
 
     # Define the API key and endpoint
-    api_url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
+    api_url = "https://api.stability.ai/v2beta/stable-image/generate/core"
 
     engine_id = "stable-diffusion-v1-6"
     api_host = "https://api.stability.ai"
@@ -54,29 +54,21 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     
     # Define the S3 bucket and object key
     s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
-    s3_object_key = article_id+'_BBS.png'
+    s3_object_key = 'gen/'+article_id+'_BBS.png'
     print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
     print(f"api_key {api_key}.")
         
     response = requests.post(
-        f"{api_host}/v1/generation/{engine_id}/text-to-image",
+        f"https://api.stability.ai/v2beta/stable-image/generate/core",
         headers={
-            "Content-Type": "application/json",
-            "Accept": "application/json",
+            "accept": "image/*",
             "Authorization": f"Bearer {api_key}"
         },
-        json={
-            "text_prompts": [
-                {
-                    "text": prompt
-                }
-            ],
-            "cfg_scale": 7,
-            "height": 1024,
-            "width": 1024,
-            "samples": 1,
-            "steps": 30,
-        },
+        files={"none": ''},
+        data={
+            "prompt": prompt,
+            "output_format": "png"
+        }
     )
 
     if response.status_code != 200:
