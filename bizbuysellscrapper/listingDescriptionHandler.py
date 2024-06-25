@@ -57,24 +57,24 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     s3_object_key = 'gen/'+article_id+'_BBS.png'
     print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
     print(f"api_key {api_key}.")
-        
+    print(f"prompt {prompt}.")
+
+
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/core",
         headers={
-            "accept": "image/*",
-            "Authorization": f"Bearer {api_key}"
+            "authorization": f"Bearer {api_key}",
+            "accept": "application/json"
         },
         files={"none": ''},
         data={
             "prompt": prompt,
-            "output_format": "png"
-        }
+        },
     )
 
     if response.status_code != 200:
         raise Exception("Non-200 response: " + str(response.text))
-
-
+    
     # Check if the request was successful
     if response.status_code == 200:
         data = response.json()
