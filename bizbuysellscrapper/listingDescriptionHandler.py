@@ -81,31 +81,31 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         # Save the image to a file
         local_image_path = 'generated_image.png'
 
-        for i, image in enumerate(data["artifacts"]):
-            with open(local_image_path, "wb") as f:
-                f.write(base64.b64decode(image["base64"]))
+        with open(local_image_path, "wb") as f:
+            f.write(response.content)
     
-            print('Image generated and saved as generated_image.png')
+        print('Image generated and saved as generated_image.png')
         
-            # Upload the image to S3
-            s3_client = boto3.client('s3')
 
-            try:
-                s3_client.upload_file(local_image_path, s3_bucket_name, s3_object_key)
-                print(f'Image uploaded to S3 bucket {s3_bucket_name} with key {s3_object_key}')
+        # Upload the image to S3
+        s3_client = boto3.client('s3')
+
+        try:
+            s3_client.upload_file(local_image_path, s3_bucket_name, s3_object_key)
+            print(f'Image uploaded to S3 bucket {s3_bucket_name} with key {s3_object_key}')
                 
-                # Generate the S3 URL
-                s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
-                print(f'S3 URL: {s3_url}')
+            # Generate the S3 URL
+            s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
+            print(f'S3 URL: {s3_url}')
 
-                return s3_url
+            return s3_url
             
-            except FileNotFoundError:
-                print('The file was not found')
-            except NoCredentialsError:
-                print('Credentials not available')
-            except Exception as e:
-                print(f'An error occurred: {e}')
+        except FileNotFoundError:
+            print('The file was not found')
+        except NoCredentialsError:
+            print('Credentials not available')
+        except Exception as e:
+            print(f'An error occurred: {e}')
     else:
         print('Failed to generate image')
         print('Status code:', response.status_code)
