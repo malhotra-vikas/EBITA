@@ -34,11 +34,6 @@ client = OpenAI(api_key=OPENAI_KEY)
 
 
 def generate_image_from_AI(business_description, article_id, businesses_title):
-    # Define the S3 bucket and object key
-    s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
-    s3_object_key = article_id+'_BBS.png'
-    print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
-    print(f"api_key {api_key}.")
 
     # Define the prompt
     prompt = (
@@ -57,6 +52,12 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     if api_key is None:
         raise Exception("Missing Stability API key.")
     
+    # Define the S3 bucket and object key
+    s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
+    s3_object_key = article_id+'_BBS.png'
+    print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
+    print(f"api_key {api_key}.")
+        
     response = requests.post(
         f"{api_host}/v1/generation/{engine_id}/text-to-image",
         headers={
