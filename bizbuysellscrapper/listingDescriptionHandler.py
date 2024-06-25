@@ -34,13 +34,9 @@ client = OpenAI(api_key=OPENAI_KEY)
 
 
 def generate_image_from_AI(business_description, article_id, businesses_title):
-    # Define the API key and endpoint
-    api_key = IMAGE_STABILITY_AI_API_KEY
-    api_url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
-
     # Define the S3 bucket and object key
     s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
-    s3_object_key = 'generated_images/'+article_id+'_BBS.png'
+    s3_object_key = article_id+'_BBS.png'
     print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
     print(f"api_key {api_key}.")
 
@@ -51,49 +47,72 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         + business_description
     )
 
-    # Set the headers for the request
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "accept": "image/*"
-    }
+    # Define the API key and endpoint
+    api_url = "https://api.stability.ai/v2beta/stable-image/generate/ultra"
 
-    # Set the payload for the request
-    data = {
-        "prompt": prompt,
-        "output_format": "png"
-    }
+    engine_id = "stable-diffusion-v1-6"
+    api_host = "https://api.stability.ai"
+    api_key = IMAGE_STABILITY_AI_API_KEY
 
-    # Make the request to the API
-    response = requests.post(api_url, headers=headers, files={"none": ''}, data=data)
+    if api_key is None:
+        raise Exception("Missing Stability API key.")
+    
+    response = requests.post(
+        f"{api_host}/v1/generation/{engine_id}/text-to-image",
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        },
+        json={
+            "text_prompts": [
+                {
+                    "text": prompt
+                }
+            ],
+            "cfg_scale": 7,
+            "height": 1024,
+            "width": 1024,
+            "samples": 1,
+            "steps": 30,
+        },
+    )
+
+    if response.status_code != 200:
+        raise Exception("Non-200 response: " + str(response.text))
+
 
     # Check if the request was successful
     if response.status_code == 200:
+        data = response.json()
         # Save the image to a file
         local_image_path = 'generated_image.png'
-        with open(local_image_path, 'wb') as image_file:
-            image_file.write(response.content)
-        
-        print('Image generated and saved as generated_image.png')
-        
-        # Upload the image to S3
-        s3_client = boto3.client('s3')
 
-        try:
-            s3_client.upload_file(local_image_path, s3_bucket_name, s3_object_key)
-            print(f'Image uploaded to S3 bucket {s3_bucket_name} with key {s3_object_key}')
-            
-            # Generate the S3 URL
-            s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
-            print(f'S3 URL: {s3_url}')
+        for i, image in enumerate(data["artifacts"]):
+            with open(local_image_path, "wb") as f:
+                f.write(base64.b64decode(image["base64"]))
+    
+            print('Image generated and saved as generated_image.png')
+        
+            # Upload the image to S3
+            s3_client = boto3.client('s3')
 
-            return s3_url
+            try:
+                s3_client.upload_file(local_image_path, s3_bucket_name, s3_object_key)
+                print(f'Image uploaded to S3 bucket {s3_bucket_name} with key {s3_object_key}')
+                
+                # Generate the S3 URL
+                s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
+                print(f'S3 URL: {s3_url}')
+
+                return s3_url
             
-        except FileNotFoundError:
-            print('The file was not found')
-        except NoCredentialsError:
-            print('Credentials not available')
-        except Exception as e:
-            print(f'An error occurred: {e}')
+            except FileNotFoundError:
+                print('The file was not found')
+            except NoCredentialsError:
+                print('Credentials not available')
+            except Exception as e:
+                print(f'An error occurred: {e}')
     else:
         print('Failed to generate image')
         print('Status code:', response.status_code)
