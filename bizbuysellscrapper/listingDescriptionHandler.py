@@ -54,7 +54,7 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     
     # Define the S3 bucket and object key
     s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
-    s3_object_key = 'gen/'+article_id+'_BBS.png'
+    s3_object_key = article_id+'_BBS.png'
     print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
     print(f"api_key {api_key}.")
     print(f"prompt {prompt}.")
@@ -63,12 +63,12 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/core",
         headers={
-            "authorization": f"Bearer {api_key}",
-            "accept": "application/json"
+            "authorization": f"Bearer {IMAGE_STABILITY_AI_API_KEY}",
+            "accept": "image/*"
         },
         files={"none": ''},
         data={
-            "prompt": prompt,
+            "prompt": {prompt},
         },
     )
 
@@ -77,15 +77,13 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     
     # Check if the request was successful
     if response.status_code == 200:
-        data = response.json()
         # Save the image to a file
         local_image_path = 'generated_image.png'
 
-        with open(local_image_path, "wb") as f:
-            f.write(response.content)
+        with open(local_image_path, 'wb') as file:
+            file.write(response.content)
     
-        print('Image generated and saved as generated_image.png')
-        
+        print('Image generated and saved as', local_image_path)
 
         # Upload the image to S3
         s3_client = boto3.client('s3')
