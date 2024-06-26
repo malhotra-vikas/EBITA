@@ -5,7 +5,7 @@ import sys
 from openai import OpenAI
 import requests
 import base64
-from botocore.exceptions import NoCredentialsError
+from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 
 import dotenv
 import logging
@@ -32,6 +32,22 @@ dotenv.load_dotenv()
 
 client = OpenAI(api_key=OPENAI_KEY)
 
+def check_s3_file_exists(bucketname, key):
+    # Initialize S3 client
+    s3 = boto3.client('s3')
+    fileExists = False
+
+    try:
+        # Try to get the object from the S3 bucket
+        s3.head_object(Bucket=bucketname, Key=key)
+        fileExists = True
+    except s3.exceptions.NoSuchKey:
+        fileExists = False
+    except (NoCredentialsError, PartialCredentialsError) as e:
+        return f"Credentials error: {str(e)}"
+    except Exception as e:
+        return f"Error accessing S3: {str(e)}"
+    return fileExists
 
 def generate_image_from_AI(business_description, article_id, businesses_title):
 
@@ -42,11 +58,6 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         + business_description
     )
 
-    # Define the API key and endpoint
-    api_url = "https://api.stability.ai/v2beta/stable-image/generate/core"
-
-    engine_id = "stable-diffusion-v1-6"
-    api_host = "https://api.stability.ai"
     api_key = IMAGE_STABILITY_AI_API_KEY
 
     if api_key is None:
@@ -59,6 +70,14 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     print(f"api_key {api_key}.")
     print(f"prompt {prompt}.")
 
+    # Generate the S3 URL
+    s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
+    print(f'S3 URL: {s3_url}')
+    
+    generatedFileExistsForThisListing = check_s3_file_exists(s3_bucket_name, s3_object_key)
+
+    if (generatedFileExistsForThisListing):
+        return s3_url
 
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/core",
@@ -91,10 +110,6 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         try:
             s3_client.upload_file(local_image_path, s3_bucket_name, s3_object_key)
             print(f'Image uploaded to S3 bucket {s3_bucket_name} with key {s3_object_key}')
-                
-            # Generate the S3 URL
-            s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
-            print(f'S3 URL: {s3_url}')
 
             return s3_url
             
