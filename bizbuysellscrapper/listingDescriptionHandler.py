@@ -77,8 +77,11 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     generatedFileExistsForThisListing = check_s3_file_exists(s3_bucket_name, s3_object_key)
 
     if (generatedFileExistsForThisListing):
+        print(f'Found an existing EBITGen image at S3 URL: {s3_url}')
         return s3_url
 
+    print(f'No existing EBITGen image at S3 URL. Creating a new one: {s3_url}')
+    
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/core",
         headers={
