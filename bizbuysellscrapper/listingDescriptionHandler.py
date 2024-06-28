@@ -88,6 +88,7 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         files={"none": ''},
         data={
             "prompt": {prompt},
+            "output_format": "jpeg"
         },
     )
 
