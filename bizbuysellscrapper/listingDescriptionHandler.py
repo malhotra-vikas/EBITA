@@ -65,7 +65,7 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
     
     # Define the S3 bucket and object key
     s3_bucket_name = os.environ.get("IMAGE_STABILITY_AI_GENERATED_S3_Bucket_KEY")
-    s3_object_key = 'EBITGen/'+article_id+'_BBS.png'
+    s3_object_key = article_id+'_BBS.png'
     print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
     print(f"api_key {api_key}.")
     print(f"prompt {prompt}.")
@@ -81,7 +81,7 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         return s3_url
 
     print(f'No existing EBITGen image at S3 URL. Creating a new one: {s3_url}')
-    
+
     response = requests.post(
         f"https://api.stability.ai/v2beta/stable-image/generate/core",
         headers={
