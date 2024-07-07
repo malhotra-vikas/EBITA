@@ -4,6 +4,7 @@ __pycache__/
 EBITAVenv/
 myenv/
 venv/
+Lambdas/packages
 
 # Other generated files
 *.log

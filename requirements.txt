@@ -55,3 +55,4 @@ webdriver-manager==4.0.1
 wsproto==1.2.0
 zope.interface==6.1
 openai==1.30.4
+pillow==9.5.0

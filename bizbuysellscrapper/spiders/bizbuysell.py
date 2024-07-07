@@ -3,7 +3,7 @@ import re
 import json
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description, generate_readable_title_withAI, generate_image_from_AI
+from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description, generate_readable_title_withAI, generate_image_from_AI, resize_and_convert_image
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
 from bizbuysellscrapper.s3_utils import get_file_format, get_input_urls_from_s3
 from scrapy.utils.project import get_project_settings
@@ -194,13 +194,14 @@ class BizbuysellSpider(scrapy.Spider):
         cleaned_business_description = cleaned_business_description.replace('\r', '').replace('\n', '')
         
         scraped_business_description_text = cleaned_business_description if cleaned_business_description else 'NA'
+        ai_images_dict = {}
 
         generated_image_url = "https://publiclistingphotos.s3.amazonaws.com/no-photo.jpg"
 
         if (scraped_business_description_text and scraped_business_description_text != 'NA' and scraped_business_description_text != ""):
             business_description = generate_readable_description(scraped_business_description_text)
 
-            generated_image_url = generate_image_from_AI(business_description, article_id, businesses_title)            
+            ai_images_dict = generate_image_from_AI(business_description, article_id, businesses_title)            
         else:
             business_description = scraped_business_description_text
 
@@ -210,14 +211,23 @@ class BizbuysellSpider(scrapy.Spider):
             title = 'NA'
 
         # Listing Photos
-        dynamic_dict = {}
+        dynamic_dict = []
+        dynamic_dict.append(ai_images_dict)
+
         listing_photos = response.xpath("//div[@id='slider']//img/@src").getall()
-        if not listing_photos:
-            dynamic_dict[f"link-1"] = generated_image_url
-        else:
-            dynamic_dict[f"link-1"] = generated_image_url
-            for index, url in enumerate(listing_photos, start=2):
-                dynamic_dict[f"link-{index}"] = url
+        if listing_photos:
+            scrapped_images_dict = {}
+            # Sizes you want to resize your image to
+            sizes = [(851, 420), (526, 240), (146, 202), (411, 243), (265, 146)]
+            s3_object_key = article_id+"_BBS_Scrapped.png"
+
+            for index, scrapped_image_url in enumerate(listing_photos, start=2):
+                for size in sizes:
+                    resized_s3_url = resize_and_convert_image(scrapped_image_url, size, s3_object_key)
+                    key = f"{size[0]}x{size[1]}"
+                    scrapped_images_dict[key] = resized_s3_url
+
+                dynamic_dict.append(scrapped_images_dict)
 
         custom_logger.info('listing_photos: %s', listing_photos)
 
