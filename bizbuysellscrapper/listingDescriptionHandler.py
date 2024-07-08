@@ -75,41 +75,59 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key):
     print("File name without extension:", s3_key_to_be_used)
     print("Extension:", extension)
 
-    # Check if the path is a URL or a local path
-    if input_image_path.startswith(('http://', 'https://')):
-        response = requests.get(input_image_path)
-        image = Image.open(BytesIO(response.content))
-        input_file_name = os.path.basename(input_image_path)
-    else:
-        image = Image.open(input_image_path)
-        input_file_name = os.path.basename(input_image_path)
+    try:
+        # Check if the path is a URL or a local path
+        if input_image_path.startswith(('http://', 'https://')):
+            response = requests.get(input_image_path, timeout=15)  # Extended timeout
+            response.raise_for_status()  # Raises an HTTPError for bad responses
+            print("HTTP Status Code:", response.status_code)
+            print("Content-Type:", response.headers['Content-Type'])
+            # Only process the image if the content type is correct
+            if 'image' in response.headers['Content-Type']:
+                image = Image.open(BytesIO(response.content))
+                input_file_name = os.path.basename(input_image_path)
+        else:
+            image = Image.open(input_image_path)
+            input_file_name = os.path.basename(input_image_path)
 
-    # Split the file name from the extension
-    input_file_name_without_extension, extension = os.path.splitext(input_file_name)
+        # Split the file name from the extension
+        input_file_name_without_extension, extension = os.path.splitext(input_file_name)
 
-    print("File name:", input_file_name, input_file_name_without_extension, extension)
+        print("File name:", input_file_name, input_file_name_without_extension, extension)
 
-    
-    # Convert PNG to RGB if necessary (JPEG does not support alpha channel)
-    if image.mode in ('RGBA', 'LA'):
-        background = Image.new(image.mode[:-1], image.size, (255, 255, 255))
-        background.paste(image, image.split()[-1])
-        image = background.convert('RGB')
-
-    # Resize the image using high-quality filter
-    resized_image = image.resize(size, Image.LANCZOS)
-
-    # Construct the output filename using the file_name_without_extension
-    output_filename = f"{input_file_name_without_extension}_{size[0]}x{size[1]}.jpg"
         
-    # Save the resized image in JPEG format with high quality
-    resized_image.save(output_filename, 'JPEG', quality=95)  # High quality setting
+        # Convert PNG to RGB if necessary (JPEG does not support alpha channel)
+        if image.mode in ('RGBA', 'LA'):
+            background = Image.new(image.mode[:-1], image.size, (255, 255, 255))
+            background.paste(image, image.split()[-1])
+            image = background.convert('RGB')
 
-    print("All images have been resized, converted to JPEG, and saved.")
+        # Resize the image using high-quality filter
+        resized_image = image.resize(size, Image.LANCZOS)
 
-    # Upload the image to S3
-    s3_client = boto3.client('s3')
-    s3_object_key = f"{s3_key_to_be_used}_{size[0]}x{size[1]}.jpg"
+        # Construct the output filename using the file_name_without_extension
+        output_filename = f"{input_file_name_without_extension}_{size[0]}x{size[1]}.jpg"
+            
+        # Save the resized image in JPEG format with high quality
+        resized_image.save(output_filename, 'JPEG', quality=95)  # High quality setting
+
+        print("All images have been resized, converted to JPEG, and saved.")
+
+        # Upload the image to S3
+        s3_client = boto3.client('s3')
+        s3_object_key = f"{s3_key_to_be_used}_{size[0]}x{size[1]}.jpg"
+    except requests.exceptions.Timeout:
+        # Handle timeouts specifically
+        print("Request timed out: Skipping this image.")
+        sourceImageTimedOut = True
+        return input_image_path
+    except requests.exceptions.HTTPError as e:
+        # Handle HTTP errors (like 404, 500, etc.)
+        print(f"HTTP error occurred: {e}")
+    except requests.exceptions.RequestException as e:
+        # Handle other possible exceptions
+        print(f"Error fetching image: {e}")
+
 
     try:
         s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
