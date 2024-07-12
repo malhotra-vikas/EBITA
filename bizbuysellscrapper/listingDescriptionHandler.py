@@ -9,6 +9,10 @@ from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+import time
+
 import dotenv
 import logging
 from datetime import datetime
@@ -42,6 +46,42 @@ table = dynamodb.Table(DYNAMODB_TABLE_NAME)
 
 client = openai.OpenAI(api_key=OPENAI_KEY)
 
+# Function to download image using Selenium
+def download_image(url, referrer):
+    # Set up Selenium WebDriver (assuming Chrome)
+    options = webdriver.ChromeOptions()
+    options.headless = True
+    driver = webdriver.Chrome(options=options)
+
+    try:
+        # Set headers for the request
+        headers = {
+            'Referer': referrer,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+        }
+
+        # Open the image URL
+        driver.get(url)
+        time.sleep(2)  # Wait for the page to load
+
+        # Find the image element and get its source URL
+        img_element = driver.find_element(By.TAG_NAME, 'img')
+        img_url = img_element.get_attribute('src')
+
+        # Download the image
+        response = requests.get(img_url, headers=headers, timeout=5)
+        if response.status_code == 200:
+            print(f"Success downloading image: {response.status_code}")
+            return Image.open(BytesIO(response.content))
+        else:
+            print(f"Error downloading image: {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Failed to download image: {e}")
+        return None
+    finally:
+        driver.quit()
+
 def check_s3_file_exists(bucketname, key):
     # Initialize S3 client
     s3 = boto3.client('s3')
@@ -66,7 +106,7 @@ def check_s3_file_exists(bucketname, key):
 
     return fileExists
 
-def resize_and_convert_image(input_image_path, size, original_s3_object_key):
+def resize_and_convert_image(input_image_path, size, original_s3_object_key, referrer=""):
     print("The file name is ", input_image_path)
     # Split the file name from the extension
     s3_key_to_be_used, extension = os.path.splitext(original_s3_object_key)
@@ -78,7 +118,14 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key):
     try:
         # Check if the path is a URL or a local path
         if input_image_path.startswith(('http://', 'https://')):
-            response = requests.get(input_image_path, timeout=15)  # Extended timeout
+
+            # Referrer URL
+            headers = {
+                'Referer': referrer,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+            }
+
+            response = requests.get(input_image_path, headers=headers, timeout=5)
             response.raise_for_status()  # Raises an HTTPError for bad responses
             print("HTTP Status Code:", response.status_code)
             print("Content-Type:", response.headers['Content-Type'])
@@ -102,8 +149,33 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key):
             background.paste(image, image.split()[-1])
             image = background.convert('RGB')
 
+        target_width = size[0]
+        target_height = size[1]
+        print("File target width and height:", target_width, target_height)
+
+        # Calculate the target aspect ratio
+        target_aspect_ratio = target_width / target_height
+        original_width, original_height = image.size
+        print("File original width and height:", original_width, original_height)
+
+        # Calculate cropping box
+        if original_width / original_height > target_aspect_ratio:
+            new_width = int(original_height * target_aspect_ratio)
+            left = (original_width - new_width) // 2
+            box = (left, 0, left + new_width, original_height)
+        else:
+            new_height = int(original_width / target_aspect_ratio)
+            top = (original_height - new_height) // 2
+            box = (0, top, original_width, top + new_height)
+
+        # Crop the image
+        cropped_image = image.crop(box)
+
+        # Resize the image
+        resized_image = cropped_image.resize((target_width, target_height), Image.ANTIALIAS)
+
         # Resize the image using high-quality filter
-        resized_image = image.resize(size, Image.LANCZOS)
+        #resized_image = image.resize(size, Image.LANCZOS)
 
         # Construct the output filename using the file_name_without_extension
         output_filename = f"{input_file_name_without_extension}_{size[0]}x{size[1]}.jpg"
@@ -381,3 +453,13 @@ def generate_readable_title_withAI(business_description):
     generated_title = generated_title.replace('"', "").replace("'", "")
 
     return generated_title
+
+
+# Image URL
+#input_image_path = 'https://images.bizbuysell.com/shared/listings/205/2058449/eaadd338-567b-444d-b2fe-29c695315f97-W768.jpg'
+#referrer = 'https://www.bizbuysell.com/Business-Opportunity/jersey-shore-surf-shop-and-boutique/2058449/'
+
+#resize_and_convert_image(input_image_path, (851, 420), "dssdd.png", "https://www.bizbuysell.com/Business-Opportunity/jersey-shore-surf-shop-and-boutique/2058449/")
+
+# Download the image
+#original_image = download_image(input_image_path, referrer)

@@ -223,7 +223,7 @@ class BizbuysellSpider(scrapy.Spider):
 
             for index, scrapped_image_url in enumerate(listing_photos, start=2):
                 for size in sizes:
-                    resized_s3_url = resize_and_convert_image(scrapped_image_url, size, s3_object_key)
+                    resized_s3_url = resize_and_convert_image(scrapped_image_url, size, s3_object_key, article_url)
                     key = f"{size[0]}x{size[1]}"
                     scrapped_images_dict[key] = resized_s3_url
 
