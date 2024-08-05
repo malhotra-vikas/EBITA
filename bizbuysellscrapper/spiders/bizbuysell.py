@@ -148,7 +148,12 @@ class BizbuysellSpider(scrapy.Spider):
         title = response.xpath("//span[@class='h3 hidden']/text()").get(default='NA').strip()
 
         # Location
-        location = response.xpath("//dl[@id='ctl00_ctl00_Content_ContentPlaceHolder1_wideProfile_listingDetails_dlDetailedInformation']/dd[1]/text()").get(default='NA').strip()
+        #location = response.xpath("//dl[@id='ctl00_ctl00_Content_ContentPlaceHolder1_wideProfile_listingDetails_dlDetailedInformation']/dd[1]/text()").get(default='NA').strip()
+        
+        location_xpath_query = "//div[@class='col-12 col-md-8 relative']/span[@class='f-l cs-800 flex-center g8 opacity-70']/text()"
+        
+        # Extracting text using the constructed XPath, stripping extra whitespace
+        location = response.xpath(location_xpath_query).get(default='NA').strip()
         
         # Rent
         rent = response.xpath("//dt[contains(text(), 'Rent:')]/following-sibling::dd[1]/text()").get(default='NA').strip()
