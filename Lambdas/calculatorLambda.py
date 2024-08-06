@@ -67,6 +67,11 @@ def debt_calculator_handler(event, context):
     term_months = termYears * 12
     cfMargin = (cash_flow / revenue) * 100
 
+    if (downpayment == 0):
+        downpayment_percentage = 0
+    else:
+        downpayment_percentage = (price / downpayment)
+
     print("calcul;ating for:", loan_amount)
     print("calcul;ating for:", monthly_interest)
     print("calcul;ating for:", term_months)
@@ -102,7 +107,8 @@ def debt_calculator_handler(event, context):
             "net_cash_flow": round(net_cash_flow, 0),
             "CF_margin": round(cfMargin, 0),
             "debt_service_coverage": round(debt_service_coverage, 1),
-            "payback_period": round(payback_period, 1),  # Rounded to 2 decimal places
+            "payback_period": round(payback_period, 1),  # Rounded to 1 decimal places
+            "downpayment_percentage": round(downpayment_percentage, 1),  # Rounded to 1 decimal places
         },
     }
 
