@@ -43,7 +43,6 @@ def debt_calculator_handler(event, context):
         ebitda = 1
     if price < 1:
         price = 1
-        downpayment = 10000
 
     if not all([revenue, cash_flow, ebitda, price, downpayment, interest, termYears]):
         response["body"] = "Validation Error - User missing required fields"
