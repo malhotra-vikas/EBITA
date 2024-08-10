@@ -66,10 +66,10 @@ def debt_calculator_handler(event, context):
     term_months = termYears * 12
     cfMargin = (cash_flow / revenue) * 100
 
-    if (downpayment == 0):
+    if (price == 0):
         downpayment_percentage = 0
     else:
-        downpayment_percentage = (price / downpayment)
+        downpayment_percentage = (downpayment / price) * 100
 
     print("calcul;ating for:", loan_amount)
     print("calcul;ating for:", monthly_interest)
@@ -85,8 +85,9 @@ def debt_calculator_handler(event, context):
     debt_service_coverage = cash_flow / pmt
 
     # Calculate Payback Period
-    payback_period = (revenue * 0.1) / (net_cash_flow / 12)
-
+    #payback_period = (revenue * 0.1) / (net_cash_flow / 12)
+    payback_period = (downpayment / net_cash_flow) * 12
+    
     # Construct the response body
     response_body = {
         "message": "Lambda function executed successfully",
