@@ -6,6 +6,8 @@
 
 # useful for handling different item types with a single interface
 import json
+import os
+
 from bizbuysellscrapper.db import DynamoDBManager
 from bizbuysellscrapper.schema import ScrappedDataSchema
 from bizbuysellscrapper.s3_bucket_manager import S3BucketManager
@@ -52,8 +54,17 @@ class S3Pipeline:
         # Get today's date in the format YYYYMMDD
         today_date = datetime.now().strftime("%Y%m%d")
 
+        load_absentee_urls = os.getenv('LOAD_ABSENTEE_URLS', 'false').lower() == 'true'
+        load_sellerfinancing_urls = os.getenv('LOAD_SELLER_FINANCING_URLS', 'false').lower() == 'true'
+        if load_absentee_urls:
+            file_type = 'absentee'
+        elif load_sellerfinancing_urls:
+            file_type = "sellerfinancing"
+        else:
+            file_type = "regular"                
+
         # Append today's date to the DDB Table
-        JSON_NAME = f"{spider.name}_{today_date}.json"
+        JSON_NAME = f"{spider.name}_{file_type}_{today_date}.json"
 
         # Put the item into the bucket
         self.s3_manager.put_object(

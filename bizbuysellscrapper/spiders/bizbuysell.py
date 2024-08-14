@@ -1,6 +1,8 @@
 import scrapy
 import re
 import json
+import os
+
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from bizbuysellscrapper.listingDescriptionHandler import generate_readable_description, generate_readable_title_withAI, generate_image_from_AI, resize_and_convert_image
@@ -44,7 +46,7 @@ class BizbuysellSpider(scrapy.Spider):
 
     def __init__(self):
         self.visited_urls = set()
-
+    
     '''
     def __init__(self, *args, **kwargs):
         super(BizbuysellSpider, self).__init__(*args, **kwargs)
@@ -54,16 +56,50 @@ class BizbuysellSpider(scrapy.Spider):
 
     def start_requests(self):
         isTest = settings.get("IS_TEST")
-    
+        
+        # Determine the environment
+        runEnv = os.getenv('RUN_ENV', 'local')  # Default to 'local' if not set
+        load_absentee_urls = os.getenv('LOAD_ABSENTEE_URLS', 'false').lower() == 'true'
+        load_sellerfinancing_urls = os.getenv('LOAD_SELLER_FINANCING_URLS', 'false').lower() == 'true'
+
+        # Set file path based on the environment
+        if runEnv == 'production':
+            if load_absentee_urls:
+                file_path = "/home/ubuntu/EBITA/bizbuysell-absentee-urls.txt"
+                file_type = "absentee"
+                self.file_type = 'absentee'
+            elif load_sellerfinancing_urls:
+                file_path = "/home/ubuntu/EBITA/bizbuysell-sellerfinancing-urls.txt"
+                file_type = "sellerfinancing"
+                self.file_type = "sellerfinancing"
+            else:
+                file_path = "/home/ubuntu/EBITA/bizbuysell-urls.txt"
+                file_type = "regular"
+                self.file_type = "regular"                
+        else:
+            if load_absentee_urls:
+                file_path = "/Users/vikas/builderspace/EBITA/bizbuysell-absentee-urls.txt"
+                file_type = "absentee"
+                self.file_type = 'absentee'
+            elif load_sellerfinancing_urls:
+                file_path = "/Users/vikas/builderspace/EBITA/bizbuysell-sellerfinancing-urls.txt"
+                file_type = "sellerfinancing"
+                self.file_type = "sellerfinancing"
+            else:
+                file_path = "/Users/vikas/builderspace/EBITA/bizbuysell-urls.txt"
+                file_type = "regular"
+                self.file_type = "regular"                
+
         # Running Local tests
         if isTest: 
-            urls = get_input_urls_from_local_fs("/Users/vikas/builderspace/EBITA/bizbuysell-urls.txt")
+            urls = get_input_urls_from_local_fs(file_path)
             for url in urls:
                 url = url.strip()
                 if url not in self.visited_urls:
                     self.visited_urls.add(url)
                     custom_logger.info('Requesting Main URL: %s', url)
-                    yield scrapy.Request(url, callback=self.parse)
+                    yield scrapy.Request(url, callback=self.parse, meta={'file_type': self.file_type})
+
         # Running version where file is read from S3
         else:
             # Get S3 bucket name from settings
@@ -88,7 +124,8 @@ class BizbuysellSpider(scrapy.Spider):
                     if url not in self.visited_urls:
                         self.visited_urls.add(url)
                         custom_logger.info('Requesting Main URL: %s', url)
-                        yield scrapy.Request(url, callback=self.parse)
+                        yield scrapy.Request(url, callback=self.parse, meta={'file_type': self.file_type})
+
 
     def parse(self, response):
         custom_logger.info('Parsing URL: %s', response.url)
@@ -387,6 +424,17 @@ class BizbuysellSpider(scrapy.Spider):
         if computed_category == "Storage Facilities and Warehouses":
             computed_category = "Self Storage"
 
+        load_absentee_urls = os.getenv('LOAD_ABSENTEE_URLS', 'false').lower() == 'true'
+        load_sellerfinancing_urls = os.getenv('LOAD_SELLER_FINANCING_URLS', 'false').lower() == 'true'
+
+        absenteeSeller = ""
+        sellerfinancing = ""
+
+        if load_absentee_urls:
+            absenteeSeller = "absentee"
+        elif load_sellerfinancing_urls:
+            sellerfinancing = "yes"        
+
         yield  {
             "businessOpportunity": {
                 "ad_id":str(article_id)+"_BBS",
@@ -412,7 +460,8 @@ class BizbuysellSpider(scrapy.Spider):
                 "EBITDA": ebitda,
                 "FF&E": ffe,
                 "inventory": inventory,
-                
+                "seller_financing": sellerfinancing,
+                "owner_type": absenteeSeller,
                 "detailedInformation": json.dumps({
                     "building_sf": building_sf.strip() if building_sf is not None else None,
                     "competition": competition.strip() if competition is not None else None,
