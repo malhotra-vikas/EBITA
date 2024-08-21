@@ -111,7 +111,7 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0  # Aim for 1 request at a time
 AUTOTHROTTLE_DEBUG = False  # Set to True to see AutoThrottle debug in logs
 
 ITEM_PIPELINES = {
-    'bizbuysellscrapper.pipelines.DynamoDBPipeline': 300,
+#    'bizbuysellscrapper.pipelines.DynamoDBPipeline': 300,
     'bizbuysellscrapper.pipelines.S3Pipeline': 400,
 }
 
