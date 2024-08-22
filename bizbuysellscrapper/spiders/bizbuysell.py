@@ -2,6 +2,7 @@ import scrapy
 import re
 import json
 import os
+import pandas as pd
 
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -40,6 +41,46 @@ def get_input_urls_from_local_fs(folder_name):
         input_urls = file.read().split('\n')
 
     return input_urls
+
+# Determine the environment
+runEnv = os.getenv('RUN_ENV', 'local')  # Default to 'local' if not set
+load_absentee_urls = os.getenv('LOAD_ABSENTEE_URLS', 'false').lower() == 'true'
+load_sellerfinancing_urls = os.getenv('LOAD_SELLER_FINANCING_URLS', 'false').lower() == 'true'
+
+# Set file path based on the environment
+if runEnv == 'production':
+    if load_absentee_urls:
+        category_mapping_file_path = '/home/ubuntu/bizbuysell-absentee/EBITA/bizbuysellscrapper/CategoryMapping.csv'
+    elif load_sellerfinancing_urls:
+        category_mapping_file_path = '/home/ubuntu/bizbuysell-sellerfinanced/EBITA/bizbuysellscrapper/CategoryMapping.csv'
+    else:
+        category_mapping_file_path = '/home/ubuntu/bizbuysell-regular/EBITA/bizbuysellscrapper/CategoryMapping.csv'
+else:
+    if load_absentee_urls:
+        category_mapping_file_path = '/Users/vikas/builderspace/EBITA/bizbuysellscrapper/CategoryMapping.csv'
+    elif load_sellerfinancing_urls:
+        category_mapping_file_path = '/Users/vikas/builderspace/EBITA/bizbuysellscrapper/CategoryMapping.csv'
+    else:
+        category_mapping_file_path = '/Users/vikas/builderspace/EBITA/bizbuysellscrapper/CategoryMapping.csv'
+
+# Load the CSV file into a dictionary for category mapping
+def load_category_mappings(category_mapping_file_path):
+    df = pd.read_csv(category_mapping_file_path)
+    return dict(zip(df['Original Category'], df['Mapped Category']))
+
+# Load the mappings at the start
+category_mapping = load_category_mappings(category_mapping_file_path)
+
+def get_mapped_category(computed_category):
+    # Check if the computed category exists in the dictionary
+    if computed_category in category_mapping:
+        # Print the mapped category if a match is found
+        print("Mapped Category:", category_mapping[computed_category])
+        return category_mapping[computed_category]
+    else:
+        # Print a message if no match is found
+        print("No mapped category found for:", computed_category)
+        return computed_category
 
 class BizbuysellSpider(scrapy.Spider):
     name = "bizbuysell"
@@ -423,6 +464,8 @@ class BizbuysellSpider(scrapy.Spider):
         
         if computed_category == "Storage Facilities and Warehouses":
             computed_category = "Self Storage"
+
+        computed_category = get_mapped_category(computed_category)
 
         load_absentee_urls = os.getenv('LOAD_ABSENTEE_URLS', 'false').lower() == 'true'
         load_sellerfinancing_urls = os.getenv('LOAD_SELLER_FINANCING_URLS', 'false').lower() == 'true'
