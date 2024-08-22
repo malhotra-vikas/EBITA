@@ -9,7 +9,6 @@ Lambdas/packages
 # Other generated files
 *.log
 *.json
-*.csv
 
 # Environment variables
 .env
