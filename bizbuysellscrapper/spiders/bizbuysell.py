@@ -438,7 +438,6 @@ class BizbuysellSpider(scrapy.Spider):
 #            'ul#image-gallery img.image::attr(src), div.swiper-wrapper div img.swiper-image::attr(src)').getall()
         
         computed_category = (businesses_title[:-9].strip() if businesses_title.endswith(" For Sale") else businesses_title.strip()) if businesses_title else None
-        custom_logger.info('computed_category: %s', computed_category)
 
         if computed_category == "Plumbing Businesses":
             computed_category = "Plumbing"
@@ -470,7 +469,9 @@ class BizbuysellSpider(scrapy.Spider):
         if computed_category == "Storage Facilities and Warehouses":
             computed_category = "Self Storage"
 
+        custom_logger.info('computed_category: %s', computed_category)
         computed_category = get_mapped_category(computed_category)
+        custom_logger.info('mapped_category: %s', computed_category)
 
         load_absentee_urls = os.getenv('LOAD_ABSENTEE_URLS', 'false').lower() == 'true'
         load_sellerfinancing_urls = os.getenv('LOAD_SELLER_FINANCING_URLS', 'false').lower() == 'true'
