@@ -218,6 +218,9 @@ class BizbuysellSpider(scrapy.Spider):
         article_url = response.url
         businesses_title = response.meta.get("businesses_title")
         custom_logger.info('businesses_title: %s', businesses_title)
+        scrapped_category = businesses_title
+        custom_logger.info('scrapped_category: %s', scrapped_category)
+        
         title = ""
         location = ""
         asking_price = ""
@@ -312,13 +315,13 @@ class BizbuysellSpider(scrapy.Spider):
 
                 dynamic_dict.append(scrapped_images_dict)
 
-        custom_logger.info('listing_photos: %s', listing_photos)
+        # custom_logger.info('listing_photos: %s', listing_photos)
 
         # Attached Documents
         attached_documents = response.xpath("//div[@class='attachedFiles']//a/@href").getall()
         if not attached_documents:
             attached_documents = 'NA'
-        custom_logger.info('attached_documents: %s', attached_documents)
+        # custom_logger.info('attached_documents: %s', attached_documents)
         
 
         # Using response.css() to extract asking price
@@ -393,19 +396,19 @@ class BizbuysellSpider(scrapy.Spider):
 
             if phone_link and phone_link.has_attr('href'):
                 phone_number = phone_link['href'].replace('tel:', '')  # Extracts and cleans the phone number
-                custom_logger.info('Broker Phone Number: %s', phone_number)
+                # custom_logger.info('Broker Phone Number: %s', phone_number)
             elif alternate_phone_link:
                 phone_number = alternate_phone_link['href'].replace('tel:', '').strip()
             else:
                 phone_number = "Not Found"
-                custom_logger.info('Broker Phone Number not found.')
+                # custom_logger.info('Broker Phone Number not found.')
 
             broker_link = soup.find('a', href=True, attrs={'class': 'broker-name'})  # This looks for an <a> tag with class 'gtm_tpn'
             alternate_broker_link = soup.find('div', class_='broker-card')
 
             if broker_link and broker_link.has_attr('href'):
                 broker_name = broker_link.text
-                custom_logger.info('Broker Name: %s', broker_name)
+                # custom_logger.info('Broker Name: %s', broker_name)
             elif alternate_broker_link:
                 br_tag = alternate_broker_link.find('br')
                 if br_tag and br_tag.next_sibling:
@@ -413,7 +416,7 @@ class BizbuysellSpider(scrapy.Spider):
 
             else:
                 broker_name = "Not Found"
-                custom_logger.info('broker name not found.')
+                # custom_logger.info('broker name not found.')
         elif alternate_broker:
             soup = BeautifulSoup(alternate_broker, 'html.parser')
             # Extract the broker's name
@@ -435,6 +438,8 @@ class BizbuysellSpider(scrapy.Spider):
 #            'ul#image-gallery img.image::attr(src), div.swiper-wrapper div img.swiper-image::attr(src)').getall()
         
         computed_category = (businesses_title[:-9].strip() if businesses_title.endswith(" For Sale") else businesses_title.strip()) if businesses_title else None
+        custom_logger.info('computed_category: %s', computed_category)
+
         if computed_category == "Plumbing Businesses":
             computed_category = "Plumbing"
 

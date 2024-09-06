@@ -17,7 +17,7 @@ import dotenv
 import logging
 from datetime import datetime
 import sys
-print(sys.executable)
+#print(sys.executable)
 
 dotenv.load_dotenv()
 AI_WATERMARK_TEXT=os.environ.get("AI_WATERMARK_TEXT")
@@ -112,8 +112,8 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key, ref
     s3_key_to_be_used, extension = os.path.splitext(original_s3_object_key)
 
     # Print or return, based on your need
-    print("File name without extension:", s3_key_to_be_used)
-    print("Extension:", extension)
+    # print("File name without extension:", s3_key_to_be_used)
+    # print("Extension:", extension)
 
     try:
         # Check if the path is a URL or a local path
@@ -127,8 +127,8 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key, ref
 
             response = requests.get(input_image_path, headers=headers, timeout=5)
             response.raise_for_status()  # Raises an HTTPError for bad responses
-            print("HTTP Status Code:", response.status_code)
-            print("Content-Type:", response.headers['Content-Type'])
+            # print("HTTP Status Code:", response.status_code)
+            # print("Content-Type:", response.headers['Content-Type'])
             # Only process the image if the content type is correct
             if 'image' in response.headers['Content-Type']:
                 image = Image.open(BytesIO(response.content))
@@ -140,7 +140,7 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key, ref
         # Split the file name from the extension
         input_file_name_without_extension, extension = os.path.splitext(input_file_name)
 
-        print("File name:", input_file_name, input_file_name_without_extension, extension)
+        # print("File name:", input_file_name, input_file_name_without_extension, extension)
 
         
         # Convert PNG to RGB if necessary (JPEG does not support alpha channel)
@@ -151,12 +151,12 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key, ref
 
         target_width = size[0]
         target_height = size[1]
-        print("File target width and height:", target_width, target_height)
+        # print("File target width and height:", target_width, target_height)
 
         # Calculate the target aspect ratio
         target_aspect_ratio = target_width / target_height
         original_width, original_height = image.size
-        print("File original width and height:", original_width, original_height)
+        # print("File original width and height:", original_width, original_height)
 
         # Calculate cropping box
         if original_width / original_height > target_aspect_ratio:
@@ -183,7 +183,7 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key, ref
         # Save the resized image in JPEG format with high quality
         resized_image.save(output_filename, 'JPEG', quality=95)  # High quality setting
 
-        print("All images have been resized, converted to JPEG, and saved.")
+        # print("All images have been resized, converted to JPEG, and saved.")
 
         # Upload the image to S3
         s3_client = boto3.client('s3')
@@ -210,7 +210,7 @@ def resize_and_convert_image(input_image_path, size, original_s3_object_key, ref
         # After upload, delete the local file to free up space
         try:
             os.remove(output_filename)
-            print(f"Successfully deleted local file: {output_filename}")
+            # print(f"Successfully deleted local file: {output_filename}")
         except Exception as e:
             print(f"Failed to delete local file: {e}")
 
@@ -302,16 +302,16 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
         raise Exception("Missing Stability API key.")
     
     s3_object_key = article_id+'_BBS.png'
-    print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
-    print(f"api_key {api_key}.")
-    print(f"prompt {prompt}.")
+    #print(f"s3_bucket_name {s3_bucket_name}, amd key {s3_object_key}.")
+    #print(f"api_key {api_key}.")
+    #print(f"prompt {prompt}.")
 
     # Generate the S3 URL
     s3_url = f'https://{s3_bucket_name}.s3.amazonaws.com/{s3_object_key}'
-    print(f'S3 URL: {s3_url}')
+    #print(f'S3 URL: {s3_url}')
     
     generatedFileExistsForThisListing = check_s3_file_exists(s3_bucket_name, s3_object_key)
-    print(f'generatedFileExistsForThisListing is: {generatedFileExistsForThisListing}')
+    #print(f'generatedFileExistsForThisListing is: {generatedFileExistsForThisListing}')
 
     if (generatedFileExistsForThisListing):
         print(f'Found an existing EBITGen image at S3 URL: {s3_url}')
@@ -374,17 +374,17 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
             # After upload, delete the local file to free up space
             try:
                 os.remove(local_watermarked_image_path)
-                print(f"Successfully deleted local file: {local_watermarked_image_path}")
+                #print(f"Successfully deleted local file: {local_watermarked_image_path}")
             except Exception as e:
                 print(f"Failed to delete local file: {e}")
 
 
             # Now send a SNS message so that the image can be processed
             # Prepare a JSON message with the S3 URL and the file name
-            message = {
-                "article_id": article_id,
-                "s3_url": s3_url,
-            }
+            #message = {
+            #    "article_id": article_id,
+            #    "s3_url": s3_url,
+            #}
             # send_sns_message
             #send_sqs_message(AI_IMAGE_CREATED_SQS_URL, message, article_id)
 
@@ -398,8 +398,8 @@ def generate_image_from_AI(business_description, article_id, businesses_title):
             print(f'An error occurred: {e}')
     else:
         print('Failed to generate image')
-        print('Status code:', response.status_code)
-        print('Response:', response.text)
+        #print('Status code:', response.status_code)
+        #print('Response:', response.text)
 
 
 def generate_readable_description(business_description):
@@ -408,7 +408,7 @@ def generate_readable_description(business_description):
         f"human-readable description in 3 paragraphs:\n\n" + business_description
     )
 
-    print("prompt os ", prompt)
+    #print("prompt os ", prompt)
     # Create a chat completion using the OpenAI API
     chat_completion = client.chat.completions.create(
         model="gpt-3.5-turbo",  # Ensure this model is available or update as necessary
@@ -419,7 +419,7 @@ def generate_readable_description(business_description):
         max_tokens=200,
     )
 
-    print(f"Updated readable_description {chat_completion}.")
+    #print(f"Updated readable_description {chat_completion}.")
 
     readable_description = chat_completion.choices[0].message.content.strip()
 
@@ -445,7 +445,7 @@ def generate_readable_title_withAI(business_description):
         max_tokens=200,
     )
 
-    print(f"Updated title {chat_completion}.")
+    #print(f"Updated title {chat_completion}.")
 
     generated_title = chat_completion.choices[0].message.content.strip()
 
